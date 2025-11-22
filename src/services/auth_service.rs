@@ -1,9 +1,10 @@
 use argon2::password_hash::SaltString;
 use argon2::password_hash::rand_core::OsRng;
 use argon2::{Argon2, PasswordHasher, PasswordVerifier};
+use crate::services::errors::AuthServiceError;
 
-struct AuthService;
-
+pub struct AuthService;
+// TODO: Test this service
 impl AuthService {
     pub fn new() -> Self {
         AuthService
@@ -12,7 +13,7 @@ impl AuthService {
     pub async fn hash_password(&self, password: &str) -> Result<String, AuthServiceError> {
         let argon2 = Argon2::default();
         let salt = SaltString::generate(&mut OsRng);
-
+        
         match argon2.hash_password(password.as_bytes(), &salt) {
             Ok(hash) => Ok(hash.to_string()),
             Err(_) => Err(AuthServiceError::HashingError),
@@ -35,20 +36,6 @@ impl AuthService {
             Ok(_) => Ok(true),
             Err(argon2::password_hash::Error::Password) => Ok(false),
             Err(_) => Err(AuthServiceError::VerificationError),
-        }
-    }
-}
-
-pub enum AuthServiceError {
-    HashingError,
-    VerificationError,
-}
-
-impl std::fmt::Display for AuthServiceError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            AuthServiceError::HashingError => write!(f, "Password hashing failed"),
-            AuthServiceError::VerificationError => write!(f, "Password verification failed"),
         }
     }
 }
