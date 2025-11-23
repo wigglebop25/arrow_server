@@ -1,5 +1,4 @@
 use diesel::result;
-use diesel::prelude::*;
 use diesel_async::RunQueryDsl;
 use arrow_server_lib::data::database::*;
 
@@ -18,7 +17,6 @@ async fn setup() -> Result<(), result::Error> {
 #[tokio::test]
 #[serial_test::serial]
 async fn test_create_user() {
-    setup().await.expect("Failed to set up test");
-
+    setup().await.expect("Setup failed");
     ()
 }

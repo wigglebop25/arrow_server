@@ -2,6 +2,7 @@ use axum::http::StatusCode;
 use axum::Json;
 use axum::body::Body;
 use axum::response::{IntoResponse, Response};
+use crate::controllers::dto::login_dto::LoginDTO;
 use crate::controllers::dto::user_dto::NewUserDTO;
 use crate::data::models::user::NewUser;
 use crate::data::repos::implementors::user_repo::UserRepo;
@@ -43,4 +44,28 @@ pub async fn register_user(Json(new_user): Json<NewUserDTO>) -> impl IntoRespons
                     .unwrap()
             }
         }
+}
+
+pub async fn login(Json(login_user): Json<LoginDTO>) -> impl IntoResponse {
+    let auth = AuthService::new();
+    let repo = UserRepo::new();
+
+    if let Some(user) = match repo.get_by_username(&login_user.username).await {
+        Ok(opt) => opt,
+        Err(e) => {
+            eprintln!("Error fetching user: {}", e);
+            return (StatusCode::INTERNAL_SERVER_ERROR, "Failed to fetch user").into_response();
+        }
+    } {
+        match auth.verify_password(&login_user.password, &user.password_hash).await {
+            Ok(true) => (StatusCode::OK, "Login successful").into_response(),
+            Ok(false) => (StatusCode::UNAUTHORIZED, "Invalid credentials").into_response(),
+            Err(e) => {
+                eprintln!("Error verifying password: {}", e);
+                (StatusCode::INTERNAL_SERVER_ERROR, "Failed to verify password").into_response()
+            }
+        }
+    } else {
+        (StatusCode::NOT_FOUND, "User not found").into_response()
+    }
 }

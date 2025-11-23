@@ -14,6 +14,29 @@ impl UserRepo {
         UserRepo {}
     }
     // TODO: Add any additional methods specific to UserRepo if needed
+    
+    pub async fn get_by_username(&self, username_query: &str) -> Result<Option<User>, result::Error> {
+        use crate::data::models::schema::users::dsl::{users, username};
+
+        let db = Database::new().await;
+
+        let mut conn: Object<AsyncMysqlConnection> = db.get_connection().await.map_err(|e| {
+            result::Error::DatabaseError(
+                result::DatabaseErrorKind::UnableToSendCommand,
+                Box::new(e.to_string()),
+            )
+        })?;
+
+        match users
+            .filter(username.eq(username_query))
+            .first::<User>(&mut conn)
+            .await
+        {
+            Ok(value) => Ok(Some(value)),
+            Err(result::Error::NotFound) => Ok(None),
+            Err(e) => Err(e),
+        }
+    }
 }
 // TODO: Create tests
 #[async_trait]

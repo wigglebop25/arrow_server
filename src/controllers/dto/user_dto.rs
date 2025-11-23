@@ -7,6 +7,7 @@ pub struct UserDTO {
     pub created_at: Option<String>,
     pub updated_at: Option<String>,
 }
+
 #[derive(Deserialize, Serialize, Debug, Clone)]
 pub struct NewUserDTO {
     pub username: String,
