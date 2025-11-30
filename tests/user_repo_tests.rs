@@ -5,6 +5,8 @@ use arrow_server_lib::data::repos::traits::repository::Repository;
 use arrow_server_lib::services::auth_service::AuthService;
 use diesel::result;
 use diesel_async::RunQueryDsl;
+use arrow_server_lib::data::models::schema::orders::dsl::orders;
+use arrow_server_lib::data::models::schema::products::dsl::products;
 
 async fn setup() -> Result<(), result::Error> {
     let db = Database::new().await;
@@ -18,6 +20,9 @@ async fn setup() -> Result<(), result::Error> {
     use arrow_server_lib::data::models::schema::user_roles::dsl::*;
 
     diesel::delete(user_roles).execute(&mut conn).await?;
+    diesel::delete(orders).execute(&mut conn).await?;
+    diesel::delete(products).execute(&mut conn).await?;
+    diesel::delete(orders).execute(&mut conn).await?;
     diesel::delete(users).execute(&mut conn).await?;
 
     Ok(())
