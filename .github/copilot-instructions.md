@@ -1,7 +1,7 @@
 # Arrow Server - Copilot Instructions
 
 ## Project Overview
-Arrow Server (Advanced Rust Restaurant Order & Workflow) is a REST API for restaurant order management using **Axum**, **Diesel** (async), and **MySQL**. Designed for high-performance concurrent order processing with Argon2 authentication.
+Arrow Server (Asynchronous Rust Restaurant Order Workflow) is a REST API for restaurant order management using **Axum**, **Diesel** (async), and **MySQL**. Designed for high-performance concurrent order processing with Argon2 authentication.
 
 ## Planned Features (API Scope)
 - REST endpoints for order submission, status updates, and retrieval
