@@ -32,10 +32,13 @@ pub async fn register_user(Json(new_user): Json<NewUserDTO>) -> impl IntoRespons
     };
 
     match repo.add(NewUser::from(&new_user)).await {
-        Ok(_) => Response::builder()
-            .status(StatusCode::CREATED)
-            .body(Body::from("User created"))
-            .unwrap(),
+        Ok(_) => {
+            println!("User created successfully! {:?}", new_user.username);
+            Response::builder()
+                .status(StatusCode::CREATED)
+                .body(Body::from("User created"))
+                .unwrap()
+        },
         Err(e) => {
             eprintln!("Error creating user: {}", e);
             Response::builder()
@@ -82,3 +85,15 @@ pub async fn login(Json(login_user): Json<LoginDTO>) -> impl IntoResponse {
 // TODO(optional): Add rate limiting and input validation
 // TODO: Implement get user by ID controller
 // TODO: Implement get all users controller
+/// Function to get user by the id
+pub async fn get_user() {
+    unimplemented!()
+}
+/// Function to get user by name using Query Params
+pub async fn get_user_by_name() {
+    unimplemented!()
+}
+/// Function to edit user
+pub async fn edit_user() {
+    unimplemented!()
+}
