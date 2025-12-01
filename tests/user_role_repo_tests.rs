@@ -1,12 +1,15 @@
 use arrow_server_lib::data::database::*;
 use arrow_server_lib::data::models::user::{NewUser, User};
-use arrow_server_lib::data::models::user_roles::{NewUserRole, UpdateUserRole};
+use arrow_server_lib::data::models::user_roles::{NewUserRole, RolePermissions, UpdateUserRole};
 use arrow_server_lib::data::repos::implementors::user_repo::UserRepo;
 use arrow_server_lib::data::repos::implementors::user_role_repo::UserRoleRepo;
 use arrow_server_lib::data::repos::traits::repository::Repository;
 use arrow_server_lib::services::auth_service::AuthService;
 use diesel::result;
 use diesel_async::RunQueryDsl;
+use arrow_server_lib::data::models::schema::order_products::dsl::order_products;
+use arrow_server_lib::data::models::schema::orders::dsl::orders;
+use arrow_server_lib::data::models::schema::products::dsl::products;
 
 async fn setup() -> Result<(), result::Error> {
     let db = Database::new().await;
@@ -20,6 +23,9 @@ async fn setup() -> Result<(), result::Error> {
     use arrow_server_lib::data::models::schema::users::dsl::users;
 
     diesel::delete(user_roles).execute(&mut conn).await?;
+    diesel::delete(order_products).execute(&mut conn).await?;
+    diesel::delete(products).execute(&mut conn).await?;
+    diesel::delete(orders).execute(&mut conn).await?;
     diesel::delete(users).execute(&mut conn).await?;
 
     Ok(())
@@ -349,4 +355,111 @@ async fn test_get_by_user_id_not_found() {
         result.is_none(),
         "Expected None for non-existent user_id roles"
     );
+}
+
+#[tokio::test]
+#[serial_test::serial]
+async fn test_set_permissions() {
+    setup().await.expect("Setup failed");
+
+    let user = create_test_user().await;
+    let repo = UserRoleRepo::new();
+
+    let new_role = NewUserRole {
+        user_id: user.user_id,
+        name: "admin_with_perms",
+        description: Some("Admin with permissions"),
+    };
+
+    repo.add(new_role).await.expect("Failed to add role");
+
+    let roles = repo
+        .get_by_user_id(user.user_id)
+        .await
+        .expect("Failed to get roles")
+        .expect("No roles found");
+
+    let role_id = roles[0].role_id;
+
+    // Set permissions using the new method
+    repo.set_permissions(role_id, RolePermissions::Admin)
+        .await
+        .expect("Failed to set permissions");
+
+    // Verify permissions were set
+    let updated_role = repo
+        .get_by_id(role_id)
+        .await
+        .expect("Failed to get role")
+        .expect("Role not found");
+
+    assert_eq!(updated_role.get_permissions(), Some(RolePermissions::Admin));
+}
+
+#[tokio::test]
+#[serial_test::serial]
+async fn test_role_permissions_enum_conversion() {
+    // Test as_str
+    assert_eq!(RolePermissions::Read.as_str(), "READ");
+    assert_eq!(RolePermissions::Write.as_str(), "WRITE");
+    assert_eq!(RolePermissions::Delete.as_str(), "DELETE");
+    assert_eq!(RolePermissions::Admin.as_str(), "ADMIN");
+
+    // Test from_str
+    assert_eq!(RolePermissions::from_str("READ"), Some(RolePermissions::Read));
+    assert_eq!(RolePermissions::from_str("read"), Some(RolePermissions::Read));
+    assert_eq!(RolePermissions::from_str("WRITE"), Some(RolePermissions::Write));
+    assert_eq!(RolePermissions::from_str("DELETE"), Some(RolePermissions::Delete));
+    assert_eq!(RolePermissions::from_str("ADMIN"), Some(RolePermissions::Admin));
+    assert_eq!(RolePermissions::from_str("invalid"), None);
+}
+
+#[tokio::test]
+#[serial_test::serial]
+async fn test_set_all_permission_types() {
+    setup().await.expect("Setup failed");
+
+    let user = create_test_user().await;
+    let repo = UserRoleRepo::new();
+
+    // Test each permission type
+    let permissions = [
+        ("read_role", RolePermissions::Read),
+        ("write_role", RolePermissions::Write),
+        ("delete_role_perm", RolePermissions::Delete),
+        ("admin_role", RolePermissions::Admin),
+    ];
+
+    for (role_name, perm) in permissions {
+        let new_role = NewUserRole {
+            user_id: user.user_id,
+            name: role_name,
+            description: None,
+        };
+
+        repo.add(new_role).await.expect("Failed to add role");
+
+        let role = repo
+            .get_by_name(role_name)
+            .await
+            .expect("Failed to get role")
+            .expect("Role not found");
+
+        repo.set_permissions(role.role_id, perm)
+            .await
+            .expect("Failed to set permissions");
+
+        let updated_role = repo
+            .get_by_id(role.role_id)
+            .await
+            .expect("Failed to get role")
+            .expect("Role not found");
+
+        assert_eq!(
+            updated_role.get_permissions(),
+            Some(perm),
+            "Permission mismatch for {}",
+            role_name
+        );
+    }
 }
