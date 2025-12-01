@@ -6,6 +6,7 @@ use tokio::net::TcpListener;
 
 // TODO: Implement the API module
 // TODO: Add swagger documentation
+// TODO: Rework API implementation use https://github.com/sheroz/axum-rest-api-sample as reference
 pub async fn start() {
     let router = Router::new()
         .route("/api", get(|| async { "Arrow Server API is running!" }))
