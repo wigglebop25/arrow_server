@@ -75,6 +75,7 @@ dependencies = [
  "serde",
  "serial_test",
  "tokio",
+ "tower-http",
 ]
 
 [[package]]
