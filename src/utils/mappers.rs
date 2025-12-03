@@ -1,4 +1,4 @@
-use crate::api::controllers::dto::{user_dto::NewUserDTO, role_dto::RoleDTO};
+use crate::api::controllers::dto::{role_dto::RoleDTO, user_dto::NewUserDTO};
 use crate::data::models::schema::sql_types::UserRolesPermissionsSet;
 use crate::data::models::user::NewUser;
 use crate::data::models::user_roles::{PermissionString, RolePermissions, UserRole};
@@ -44,8 +44,18 @@ impl From<UserRole> for RoleDTO {
             name: user_role.name.clone(),
             permissions: user_role.get_permissions().unwrap().as_str().into(),
             description: user_role.description,
-            created_at: user_role.created_at.unwrap().format("%d/%m/%Y").to_string().into(),
-            updated_at: user_role.updated_at.unwrap().format("%d/%m/%Y").to_string().into(),
+            created_at: user_role
+                .created_at
+                .unwrap()
+                .format("%d/%m/%Y")
+                .to_string()
+                .into(),
+            updated_at: user_role
+                .updated_at
+                .unwrap()
+                .format("%d/%m/%Y")
+                .to_string()
+                .into(),
         }
     }
 }

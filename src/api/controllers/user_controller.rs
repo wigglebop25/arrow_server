@@ -86,9 +86,7 @@ pub async fn login(Json(login_user): Json<LoginDTO>) -> impl IntoResponse {
 // TODO: Implement get user by ID controller
 // TODO: Implement get all users controller
 /// Function to get all users
-pub async fn get_all_users() {
-
-}
+pub async fn get_all_users() {}
 /// Function to get user by the name
 pub async fn get_user() {
     unimplemented!()
