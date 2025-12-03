@@ -39,7 +39,10 @@ async fn create_test_user(username: &str) -> i32 {
     let auth = AuthService::new();
     let repo = UserRepo::new();
 
-    let hashed = auth.hash_password("testpass").await.expect("Hashing failed");
+    let hashed = auth
+        .hash_password("testpass")
+        .await
+        .expect("Hashing failed");
 
     let test_user = NewUser {
         username,
@@ -99,7 +102,10 @@ async fn test_create_product_with_write_permission() {
         )
         .await;
 
-    assert!(result.is_ok(), "Should create product with WRITE permission");
+    assert!(
+        result.is_ok(),
+        "Should create product with WRITE permission"
+    );
 }
 
 #[tokio::test]
@@ -122,7 +128,10 @@ async fn test_create_product_with_admin_permission() {
         )
         .await;
 
-    assert!(result.is_ok(), "Should create product with ADMIN permission");
+    assert!(
+        result.is_ok(),
+        "Should create product with ADMIN permission"
+    );
 }
 
 #[tokio::test]
@@ -472,14 +481,7 @@ async fn test_update_product_not_found() {
     let service = ProductService::new();
 
     let result = service
-        .update_product(
-            99999,
-            Some("NewName"),
-            None,
-            None,
-            None,
-            write_role,
-        )
+        .update_product(99999, Some("NewName"), None, None, None, write_role)
         .await;
 
     assert_eq!(
@@ -544,7 +546,8 @@ async fn test_delete_product_with_delete_permission() {
 
     let user_id = create_test_user("product_deleter").await;
     let write_role = create_role_with_permission(user_id, "writer", RolePermissions::Write).await;
-    let delete_role = create_role_with_permission(user_id, "deleter", RolePermissions::Delete).await;
+    let delete_role =
+        create_role_with_permission(user_id, "deleter", RolePermissions::Delete).await;
     let admin_role = create_role_with_permission(user_id, "admin", RolePermissions::Admin).await;
 
     let service = ProductService::new();
@@ -678,7 +681,8 @@ async fn test_delete_product_not_found() {
     setup().await.expect("Setup failed");
 
     let user_id = create_test_user("delete_not_found").await;
-    let delete_role = create_role_with_permission(user_id, "deleter", RolePermissions::Delete).await;
+    let delete_role =
+        create_role_with_permission(user_id, "deleter", RolePermissions::Delete).await;
 
     let service = ProductService::new();
 
@@ -724,7 +728,11 @@ async fn test_update_product_image() {
 
     // Update image
     service
-        .update_product_image(product.product_id, "https://azure.blob/image.jpg", write_role)
+        .update_product_image(
+            product.product_id,
+            "https://azure.blob/image.jpg",
+            write_role,
+        )
         .await
         .expect("Failed to update image");
 

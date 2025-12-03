@@ -165,10 +165,7 @@ impl OrderService {
 
         // Users can only cancel pending orders
         if !is_admin {
-            let current_status = order
-                .status
-                .as_ref()
-                .and_then(|s| OrderStatus::from_str(s));
+            let current_status = order.status.as_ref().and_then(|s| OrderStatus::from_str(s));
             if current_status != Some(OrderStatus::Pending) {
                 return Err(OrderServiceError::InvalidStatusTransition);
             }
@@ -236,11 +233,7 @@ impl OrderService {
     }
 
     /// Deletes an order (Admin only)
-    pub async fn delete_order(
-        &self,
-        order_id: i32,
-        role_id: i32,
-    ) -> Result<(), OrderServiceError> {
+    pub async fn delete_order(&self, order_id: i32, role_id: i32) -> Result<(), OrderServiceError> {
         if !self.has_permission(role_id, RolePermissions::Admin).await? {
             return Err(OrderServiceError::PermissionDenied);
         }

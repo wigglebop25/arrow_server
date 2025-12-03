@@ -41,7 +41,10 @@ async fn create_test_user(username: &str) -> i32 {
     let auth = AuthService::new();
     let repo = UserRepo::new();
 
-    let hashed = auth.hash_password("testpass").await.expect("Hashing failed");
+    let hashed = auth
+        .hash_password("testpass")
+        .await
+        .expect("Hashing failed");
 
     let test_user = NewUser {
         username,
@@ -121,7 +124,10 @@ async fn test_create_order_with_write_permission() {
         )
         .await;
 
-    assert!(result.is_ok(), "Should be able to create order with WRITE permission");
+    assert!(
+        result.is_ok(),
+        "Should be able to create order with WRITE permission"
+    );
 }
 
 #[tokio::test]
@@ -145,7 +151,10 @@ async fn test_create_order_with_admin_permission() {
         )
         .await;
 
-    assert!(result.is_ok(), "Should be able to create order with ADMIN permission");
+    assert!(
+        result.is_ok(),
+        "Should be able to create order with ADMIN permission"
+    );
 }
 
 #[tokio::test]
@@ -182,7 +191,8 @@ async fn test_get_user_own_orders() {
     setup().await.expect("Setup failed");
 
     let user_id = create_test_user("order_viewer").await;
-    let write_role_id = create_role_with_permission(user_id, "writer", RolePermissions::Write).await;
+    let write_role_id =
+        create_role_with_permission(user_id, "writer", RolePermissions::Write).await;
     let product_id = create_test_product().await;
 
     let service = OrderService::new();
@@ -219,8 +229,10 @@ async fn test_get_other_user_orders_denied() {
 
     let user1_id = create_test_user("user1").await;
     let user2_id = create_test_user("user2").await;
-    let write_role_id = create_role_with_permission(user1_id, "writer1", RolePermissions::Write).await;
-    let read_role_id = create_role_with_permission(user2_id, "reader2", RolePermissions::Read).await;
+    let write_role_id =
+        create_role_with_permission(user1_id, "writer1", RolePermissions::Write).await;
+    let read_role_id =
+        create_role_with_permission(user2_id, "reader2", RolePermissions::Read).await;
     let product_id = create_test_product().await;
 
     let service = OrderService::new();
@@ -238,7 +250,9 @@ async fn test_get_other_user_orders_denied() {
         .expect("Failed to create order");
 
     // User2 tries to view user1's orders
-    let result = service.get_user_orders(user2_id, user1_id, read_role_id).await;
+    let result = service
+        .get_user_orders(user2_id, user1_id, read_role_id)
+        .await;
 
     assert_eq!(
         result.err(),
@@ -315,7 +329,8 @@ async fn test_cancel_own_pending_order() {
     setup().await.expect("Setup failed");
 
     let user_id = create_test_user("canceller").await;
-    let write_role_id = create_role_with_permission(user_id, "writer", RolePermissions::Write).await;
+    let write_role_id =
+        create_role_with_permission(user_id, "writer", RolePermissions::Write).await;
     let admin_role_id = create_role_with_permission(user_id, "admin", RolePermissions::Admin).await;
     let product_id = create_test_product().await;
 
@@ -363,9 +378,12 @@ async fn test_cancel_other_user_order_denied() {
 
     let user1_id = create_test_user("owner").await;
     let user2_id = create_test_user("attacker").await;
-    let write_role1_id = create_role_with_permission(user1_id, "writer1", RolePermissions::Write).await;
-    let write_role2_id = create_role_with_permission(user2_id, "writer2", RolePermissions::Write).await;
-    let admin_role_id = create_role_with_permission(user1_id, "admin1", RolePermissions::Admin).await;
+    let write_role1_id =
+        create_role_with_permission(user1_id, "writer1", RolePermissions::Write).await;
+    let write_role2_id =
+        create_role_with_permission(user2_id, "writer2", RolePermissions::Write).await;
+    let admin_role_id =
+        create_role_with_permission(user1_id, "admin1", RolePermissions::Admin).await;
     let product_id = create_test_product().await;
 
     let service = OrderService::new();
@@ -391,7 +409,9 @@ async fn test_cancel_other_user_order_denied() {
     let order_id = orders[0].order_id;
 
     // User2 tries to cancel user1's order
-    let result = service.cancel_order(user2_id, order_id, write_role2_id).await;
+    let result = service
+        .cancel_order(user2_id, order_id, write_role2_id)
+        .await;
 
     assert_eq!(
         result.err(),
@@ -465,7 +485,8 @@ async fn test_non_admin_update_status_denied() {
     setup().await.expect("Setup failed");
 
     let user_id = create_test_user("non_admin_updater").await;
-    let write_role_id = create_role_with_permission(user_id, "writer", RolePermissions::Write).await;
+    let write_role_id =
+        create_role_with_permission(user_id, "writer", RolePermissions::Write).await;
     let admin_role_id = create_role_with_permission(user_id, "admin", RolePermissions::Admin).await;
     let product_id = create_test_product().await;
 
@@ -618,7 +639,8 @@ async fn test_delete_order_non_admin_denied() {
     setup().await.expect("Setup failed");
 
     let user_id = create_test_user("non_admin_deleter").await;
-    let write_role_id = create_role_with_permission(user_id, "writer", RolePermissions::Write).await;
+    let write_role_id =
+        create_role_with_permission(user_id, "writer", RolePermissions::Write).await;
     let admin_role_id = create_role_with_permission(user_id, "admin", RolePermissions::Admin).await;
     let product_id = create_test_product().await;
 
@@ -663,8 +685,17 @@ async fn test_order_status_enum() {
     assert_eq!(OrderStatus::Cancelled.as_str(), "Cancelled");
 
     assert_eq!(OrderStatus::from_str("pending"), Some(OrderStatus::Pending));
-    assert_eq!(OrderStatus::from_str("ACCEPTED"), Some(OrderStatus::Accepted));
-    assert_eq!(OrderStatus::from_str("Completed"), Some(OrderStatus::Completed));
-    assert_eq!(OrderStatus::from_str("CANCELLED"), Some(OrderStatus::Cancelled));
+    assert_eq!(
+        OrderStatus::from_str("ACCEPTED"),
+        Some(OrderStatus::Accepted)
+    );
+    assert_eq!(
+        OrderStatus::from_str("Completed"),
+        Some(OrderStatus::Completed)
+    );
+    assert_eq!(
+        OrderStatus::from_str("CANCELLED"),
+        Some(OrderStatus::Cancelled)
+    );
     assert_eq!(OrderStatus::from_str("invalid"), None);
 }

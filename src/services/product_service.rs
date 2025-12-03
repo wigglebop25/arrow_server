@@ -146,7 +146,9 @@ impl ProductService {
         product_id: i32,
         role_id: i32,
     ) -> Result<(), ProductServiceError> {
-        if !self.has_permission(role_id, RolePermissions::Delete).await?
+        if !self
+            .has_permission(role_id, RolePermissions::Delete)
+            .await?
             && !self.has_permission(role_id, RolePermissions::Admin).await?
         {
             return Err(ProductServiceError::PermissionDenied);
