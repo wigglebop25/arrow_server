@@ -1,4 +1,4 @@
-use crate::api::routes::{auth_routes, user_routes};
+use crate::api::routes::{auth_routes, role_routes, user_routes};
 use axum::body::Body;
 use axum::extract::Request;
 use axum::middleware::Next;
@@ -16,6 +16,7 @@ pub async fn start() {
         .route("/api", get(|| async { "Arrow Server API is running!" }))
         .nest("/api/v1/auth", auth_routes::routes())
         .nest("/api/v1/users", user_routes::routes())
+        .nest("/api/v1/roles", role_routes::routes())
         .with_state::<()>(())
         .layer(cors_layer)
         .layer(middleware::from_fn(logging_middleware));
