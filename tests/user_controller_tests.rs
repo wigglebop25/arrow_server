@@ -5,7 +5,7 @@ use arrow_server_lib::data::database::Database;
 use arrow_server_lib::data::models::user::NewUser;
 use arrow_server_lib::data::repos::implementors::user_repo::UserRepo;
 use arrow_server_lib::data::repos::traits::repository::Repository;
-use arrow_server_lib::services::auth_service::AuthService;
+use arrow_server_lib::security::auth::AuthService;
 use axum::body::Body;
 use axum::http::{Request, StatusCode};
 use axum::routing::{delete, get, patch, post};

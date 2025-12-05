@@ -7,6 +7,7 @@ use diesel::mysql::{Mysql, MysqlValue};
 use diesel::serialize::{Output, ToSql};
 use diesel::{deserialize, serialize};
 use std::io::Write;
+use std::str::FromStr;
 
 impl<'a> From<&'a NewUserDTO> for NewUser<'a> {
     fn from(user_dto: &'a NewUserDTO) -> Self {
@@ -85,5 +86,34 @@ impl From<UserRole> for RoleDTO {
                 .updated_at
                 .map(|dt| dt.format("%d/%m/%Y").to_string()),
         }
+    }
+}
+
+impl TryFrom<&str> for RolePermissions {
+    type Error = &'static str;
+
+    fn try_from(value: &str) -> Result<Self, Self::Error> {
+        match value.to_uppercase().as_str() {
+            "READ" => Ok(RolePermissions::Read),
+            "WRITE" => Ok(RolePermissions::Write),
+            "DELETE" => Ok(RolePermissions::Delete),
+            "ADMIN" => Ok(RolePermissions::Admin),
+            _ => Err("Unknown permission"),
+        }
+    }
+}
+
+impl FromStr for RolePermissions {
+    type Err = &'static str;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s.to_uppercase().as_str() {
+            "READ" => Some(RolePermissions::Read),
+            "WRITE" => Some(RolePermissions::Write),
+            "DELETE" => Some(RolePermissions::Delete),
+            "ADMIN" => Some(RolePermissions::Admin),
+            _ => None,
+        }
+            .ok_or("Unknown permission")
     }
 }

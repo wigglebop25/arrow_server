@@ -5,7 +5,7 @@ use crate::data::models::user::{NewUser, UpdateUser, User};
 use crate::data::repos::implementors::user_repo::UserRepo;
 use crate::data::repos::implementors::user_role_repo::UserRoleRepo;
 use crate::data::repos::traits::repository::Repository;
-use crate::services::auth_service::AuthService;
+use crate::security::auth::AuthService;
 use axum::extract::{Path, Query};
 use axum::Json;
 use axum::body::Body;

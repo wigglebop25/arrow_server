@@ -10,7 +10,7 @@ use arrow_server_lib::data::repos::implementors::order_repo::OrderRepo;
 use arrow_server_lib::data::repos::implementors::product_repo::ProductRepo;
 use arrow_server_lib::data::repos::implementors::user_repo::UserRepo;
 use arrow_server_lib::data::repos::traits::repository::Repository;
-use arrow_server_lib::services::auth_service::AuthService;
+use arrow_server_lib::security::auth::AuthService;
 use bigdecimal::BigDecimal;
 use diesel::result;
 use diesel_async::RunQueryDsl;

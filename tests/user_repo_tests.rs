@@ -5,7 +5,7 @@ use arrow_server_lib::data::models::schema::products::dsl::products;
 use arrow_server_lib::data::models::user::{NewUser, UpdateUser};
 use arrow_server_lib::data::repos::implementors::user_repo::UserRepo;
 use arrow_server_lib::data::repos::traits::repository::Repository;
-use arrow_server_lib::services::auth_service::AuthService;
+use arrow_server_lib::security::auth::AuthService;
 use diesel::result;
 use diesel_async::RunQueryDsl;
 

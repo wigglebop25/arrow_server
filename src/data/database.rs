@@ -29,8 +29,11 @@ static DB_POOL: Lazy<Pool<AsyncMysqlConnection>> = Lazy::new(|| {
     let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
 
     let config = AsyncDieselConnectionManager::<AsyncMysqlConnection>::new(database_url);
-
-    Pool::builder(config)
+    let pool = Pool::builder(config)
         .build()
-        .expect("Failed to create database connection pool")
+        .expect("Failed to create database connection pool");
+
+    tracing::info!("DB connection pool created");
+
+    pool
 });

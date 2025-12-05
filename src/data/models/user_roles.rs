@@ -89,17 +89,4 @@ impl RolePermissions {
     }
 }
 
-impl FromStr for RolePermissions {
-    type Err = ();
 
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        match s.to_uppercase().as_str() {
-            "READ" => Some(RolePermissions::Read),
-            "WRITE" => Some(RolePermissions::Write),
-            "DELETE" => Some(RolePermissions::Delete),
-            "ADMIN" => Some(RolePermissions::Admin),
-            _ => None,
-        }
-        .ok_or(())
-    }
-}
