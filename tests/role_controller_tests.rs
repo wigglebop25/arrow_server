@@ -4,11 +4,13 @@ use arrow_server_lib::api::controllers::role_controller::{
 };
 use arrow_server_lib::data::database::Database;
 use arrow_server_lib::data::models::user::NewUser;
-use arrow_server_lib::data::models::user_roles::NewUserRole;
+use arrow_server_lib::data::models::user_roles::{NewUserRole, RolePermissions};
 use arrow_server_lib::data::repos::implementors::user_repo::UserRepo;
 use arrow_server_lib::data::repos::implementors::user_role_repo::UserRoleRepo;
 use arrow_server_lib::data::repos::traits::repository::Repository;
 use arrow_server_lib::security::auth::AuthService;
+use arrow_server_lib::security::jwt::JwtService;
+use arrow_server_lib::api::controllers::dto::user_dto::UserDTO;
 use axum::Router;
 use axum::body::Body;
 use axum::http::{Request, StatusCode};
@@ -65,6 +67,71 @@ async fn create_test_user(username: &str) -> i32 {
         .user_id
 }
 
+/// Create an admin user and return their token
+async fn create_admin_user(username: &str) -> (i32, String) {
+    let user_id = create_test_user(username).await;
+    
+    let role_repo = UserRoleRepo::new();
+    let jwt_service = JwtService::new();
+    
+    // Create admin role
+    let new_role = NewUserRole {
+        user_id,
+        name: "ADMIN",
+        description: Some("Test Admin"),
+    };
+    role_repo.add(new_role).await.expect("Failed to create role");
+    
+    // Set admin permission
+    let role = role_repo.get_by_name("ADMIN").await.expect("Query failed").expect("Role not found");
+    role_repo.set_permissions(role.role_id, RolePermissions::Admin).await.expect("Failed to set permission");
+    
+    // Generate token
+    let user_dto = UserDTO {
+        user_id: Some(user_id),
+        username: username.to_string(),
+        role: None,
+        created_at: None,
+        updated_at: None,
+    };
+    let token = jwt_service.generate_token(user_dto).await.expect("Failed to generate token");
+    
+    (user_id, token)
+}
+
+/// Create a regular (non-admin) user and return their token
+async fn create_regular_user(username: &str) -> (i32, String) {
+    let user_id = create_test_user(username).await;
+    
+    let role_repo = UserRoleRepo::new();
+    let jwt_service = JwtService::new();
+    
+    // Create regular role with READ permission
+    let role_name = format!("{}_role", username);
+    let new_role = NewUserRole {
+        user_id,
+        name: &role_name,
+        description: Some("Regular User"),
+    };
+    role_repo.add(new_role).await.expect("Failed to create role");
+    
+    // Set READ permission (non-admin)
+    let role = role_repo.get_by_name(&role_name).await.expect("Query failed").expect("Role not found");
+    role_repo.set_permissions(role.role_id, RolePermissions::Read).await.expect("Failed to set permission");
+    
+    // Generate token
+    let user_dto = UserDTO {
+        user_id: Some(user_id),
+        username: username.to_string(),
+        role: None,
+        created_at: None,
+        updated_at: None,
+    };
+    let token = jwt_service.generate_token(user_dto).await.expect("Failed to generate token");
+    
+    (user_id, token)
+}
+
 async fn create_test_role(user_id: i32, name: &str) -> i32 {
     let repo = UserRoleRepo::new();
 
@@ -100,12 +167,16 @@ fn app() -> Router {
 async fn test_get_all_roles_empty() {
     setup().await.expect("Setup failed");
 
+    // Create admin user to get token
+    let (_, token) = create_admin_user("admin").await;
+
     let app = app();
 
     let response = app
         .oneshot(
             Request::builder()
                 .uri("/roles")
+                .header("Authorization", format!("Bearer {}", token))
                 .body(Body::empty())
                 .unwrap(),
         )
@@ -116,7 +187,9 @@ async fn test_get_all_roles_empty() {
 
     let body = response.into_body().collect().await.unwrap().to_bytes();
     let body: serde_json::Value = serde_json::from_slice(&body).unwrap();
-    assert_eq!(body, json!([]));
+    // Will contain the admin role
+    let roles = body.as_array().unwrap();
+    assert_eq!(roles.len(), 1);
 }
 
 #[tokio::test]
@@ -124,7 +197,7 @@ async fn test_get_all_roles_empty() {
 async fn test_get_all_roles_with_data() {
     setup().await.expect("Setup failed");
 
-    let user_id = create_test_user("role_test_user").await;
+    let (user_id, token) = create_admin_user("admin").await;
     let _ = create_test_role(user_id, "admin_role").await;
     let _ = create_test_role(user_id, "user_role").await;
 
@@ -134,6 +207,7 @@ async fn test_get_all_roles_with_data() {
         .oneshot(
             Request::builder()
                 .uri("/roles")
+                .header("Authorization", format!("Bearer {}", token))
                 .body(Body::empty())
                 .unwrap(),
         )
@@ -145,7 +219,50 @@ async fn test_get_all_roles_with_data() {
     let body = response.into_body().collect().await.unwrap().to_bytes();
     let body: serde_json::Value = serde_json::from_slice(&body).unwrap();
     let roles = body.as_array().unwrap();
-    assert_eq!(roles.len(), 2);
+    assert_eq!(roles.len(), 3); // ADMIN role + 2 test roles
+}
+
+#[tokio::test]
+#[serial_test::serial]
+async fn test_get_all_roles_unauthorized() {
+    setup().await.expect("Setup failed");
+
+    let app = app();
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/roles")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+
+    assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
+}
+
+#[tokio::test]
+#[serial_test::serial]
+async fn test_get_all_roles_forbidden_for_non_admin() {
+    setup().await.expect("Setup failed");
+
+    let (_, token) = create_regular_user("regular").await;
+
+    let app = app();
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/roles")
+                .header("Authorization", format!("Bearer {}", token))
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+
+    assert_eq!(response.status(), StatusCode::FORBIDDEN);
 }
 
 #[tokio::test]
@@ -153,7 +270,8 @@ async fn test_get_all_roles_with_data() {
 async fn test_create_role_success() {
     setup().await.expect("Setup failed");
 
-    let user_id = create_test_user("create_role_user").await;
+    let (_, token) = create_admin_user("admin").await;
+    let _ = create_test_user("create_role_user").await;
 
     let app = app();
 
@@ -163,9 +281,10 @@ async fn test_create_role_success() {
                 .method("POST")
                 .uri("/roles")
                 .header("content-type", "application/json")
+                .header("Authorization", format!("Bearer {}", token))
                 .body(Body::from(
                     serde_json::to_vec(&json!({
-                        "user_id": user_id,
+                        "username": "create_role_user",
                         "name": "new_role",
                         "description": "A new test role"
                     }))
@@ -193,6 +312,8 @@ async fn test_create_role_success() {
 async fn test_create_role_user_not_found() {
     setup().await.expect("Setup failed");
 
+    let (_, token) = create_admin_user("admin").await;
+
     let app = app();
 
     let response = app
@@ -201,9 +322,10 @@ async fn test_create_role_user_not_found() {
                 .method("POST")
                 .uri("/roles")
                 .header("content-type", "application/json")
+                .header("Authorization", format!("Bearer {}", token))
                 .body(Body::from(
                     serde_json::to_vec(&json!({
-                        "user_id": 99999,
+                        "username": "nonexistent_user",
                         "name": "invalid_role",
                         "description": null
                     }))
@@ -222,7 +344,7 @@ async fn test_create_role_user_not_found() {
 async fn test_get_role_by_name() {
     setup().await.expect("Setup failed");
 
-    let user_id = create_test_user("get_role_user").await;
+    let (user_id, token) = create_admin_user("admin").await;
     let _ = create_test_role(user_id, "test_role").await;
 
     let app = app();
@@ -231,6 +353,7 @@ async fn test_get_role_by_name() {
         .oneshot(
             Request::builder()
                 .uri("/roles/name/test_role")
+                .header("Authorization", format!("Bearer {}", token))
                 .body(Body::empty())
                 .unwrap(),
         )
@@ -249,12 +372,15 @@ async fn test_get_role_by_name() {
 async fn test_get_role_by_name_not_found() {
     setup().await.expect("Setup failed");
 
+    let (_, token) = create_admin_user("admin").await;
+
     let app = app();
 
     let response = app
         .oneshot(
             Request::builder()
                 .uri("/roles/name/nonexistent")
+                .header("Authorization", format!("Bearer {}", token))
                 .body(Body::empty())
                 .unwrap(),
         )
@@ -269,7 +395,7 @@ async fn test_get_role_by_name_not_found() {
 async fn test_update_role() {
     setup().await.expect("Setup failed");
 
-    let user_id = create_test_user("update_role_user").await;
+    let (user_id, token) = create_admin_user("admin").await;
     let role_id = create_test_role(user_id, "update_test_role").await;
 
     let app = app();
@@ -280,6 +406,7 @@ async fn test_update_role() {
                 .method("PATCH")
                 .uri(&format!("/roles/{}", role_id))
                 .header("content-type", "application/json")
+                .header("Authorization", format!("Bearer {}", token))
                 .body(Body::from(
                     serde_json::to_vec(&json!({
                         "name": "updated_role_name",
@@ -310,6 +437,8 @@ async fn test_update_role() {
 async fn test_update_role_not_found() {
     setup().await.expect("Setup failed");
 
+    let (_, token) = create_admin_user("admin").await;
+
     let app = app();
 
     let response = app
@@ -318,6 +447,7 @@ async fn test_update_role_not_found() {
                 .method("PATCH")
                 .uri("/roles/99999")
                 .header("content-type", "application/json")
+                .header("Authorization", format!("Bearer {}", token))
                 .body(Body::from(
                     serde_json::to_vec(&json!({
                         "name": "new_name"
@@ -337,7 +467,7 @@ async fn test_update_role_not_found() {
 async fn test_delete_role() {
     setup().await.expect("Setup failed");
 
-    let user_id = create_test_user("delete_role_user").await;
+    let (user_id, token) = create_admin_user("admin").await;
     let role_id = create_test_role(user_id, "delete_test_role").await;
 
     let app = app();
@@ -347,6 +477,7 @@ async fn test_delete_role() {
             Request::builder()
                 .method("DELETE")
                 .uri(&format!("/roles/{}", role_id))
+                .header("Authorization", format!("Bearer {}", token))
                 .body(Body::empty())
                 .unwrap(),
         )
@@ -366,6 +497,8 @@ async fn test_delete_role() {
 async fn test_delete_role_not_found() {
     setup().await.expect("Setup failed");
 
+    let (_, token) = create_admin_user("admin").await;
+
     let app = app();
 
     let response = app
@@ -373,6 +506,7 @@ async fn test_delete_role_not_found() {
             Request::builder()
                 .method("DELETE")
                 .uri("/roles/99999")
+                .header("Authorization", format!("Bearer {}", token))
                 .body(Body::empty())
                 .unwrap(),
         )
@@ -387,7 +521,7 @@ async fn test_delete_role_not_found() {
 async fn test_set_permission() {
     setup().await.expect("Setup failed");
 
-    let user_id = create_test_user("perm_user").await;
+    let (user_id, token) = create_admin_user("admin").await;
     let role_id = create_test_role(user_id, "perm_test_role").await;
 
     let app = app();
@@ -398,6 +532,7 @@ async fn test_set_permission() {
                 .method("POST")
                 .uri(&format!("/roles/{}/permission", role_id))
                 .header("content-type", "application/json")
+                .header("Authorization", format!("Bearer {}", token))
                 .body(Body::from(
                     serde_json::to_vec(&json!({
                         "permission": "ADMIN"
@@ -427,7 +562,7 @@ async fn test_set_permission() {
 async fn test_set_permission_invalid() {
     setup().await.expect("Setup failed");
 
-    let user_id = create_test_user("invalid_perm_user").await;
+    let (user_id, token) = create_admin_user("admin").await;
     let role_id = create_test_role(user_id, "invalid_perm_role").await;
 
     let app = app();
@@ -438,6 +573,7 @@ async fn test_set_permission_invalid() {
                 .method("POST")
                 .uri(&format!("/roles/{}/permission", role_id))
                 .header("content-type", "application/json")
+                .header("Authorization", format!("Bearer {}", token))
                 .body(Body::from(
                     serde_json::to_vec(&json!({
                         "permission": "INVALID_PERMISSION"
@@ -457,6 +593,8 @@ async fn test_set_permission_invalid() {
 async fn test_set_permission_role_not_found() {
     setup().await.expect("Setup failed");
 
+    let (_, token) = create_admin_user("admin").await;
+
     let app = app();
 
     let response = app
@@ -465,6 +603,7 @@ async fn test_set_permission_role_not_found() {
                 .method("POST")
                 .uri("/roles/99999/permission")
                 .header("content-type", "application/json")
+                .header("Authorization", format!("Bearer {}", token))
                 .body(Body::from(
                     serde_json::to_vec(&json!({
                         "permission": "READ"
@@ -484,6 +623,7 @@ async fn test_set_permission_role_not_found() {
 async fn test_assign_role_to_user() {
     setup().await.expect("Setup failed");
 
+    let (_, token) = create_admin_user("admin").await;
     let _ = create_test_user("assign_user").await;
 
     let app = app();
@@ -494,6 +634,7 @@ async fn test_assign_role_to_user() {
                 .method("POST")
                 .uri("/roles/assign")
                 .header("content-type", "application/json")
+                .header("Authorization", format!("Bearer {}", token))
                 .body(Body::from(
                     serde_json::to_vec(&json!({
                         "username": "assign_user",
@@ -523,6 +664,8 @@ async fn test_assign_role_to_user() {
 async fn test_assign_role_user_not_found() {
     setup().await.expect("Setup failed");
 
+    let (_, token) = create_admin_user("admin").await;
+
     let app = app();
 
     let response = app
@@ -531,6 +674,7 @@ async fn test_assign_role_user_not_found() {
                 .method("POST")
                 .uri("/roles/assign")
                 .header("content-type", "application/json")
+                .header("Authorization", format!("Bearer {}", token))
                 .body(Body::from(
                     serde_json::to_vec(&json!({
                         "username": "nonexistent_user",
@@ -551,7 +695,7 @@ async fn test_assign_role_user_not_found() {
 async fn test_set_all_permission_types() {
     setup().await.expect("Setup failed");
 
-    let user_id = create_test_user("all_perms_user").await;
+    let (user_id, token) = create_admin_user("admin").await;
     let role_id = create_test_role(user_id, "all_perms_role").await;
 
     let repo = UserRoleRepo::new();
@@ -565,6 +709,7 @@ async fn test_set_all_permission_types() {
                     .method("POST")
                     .uri(&format!("/roles/{}/permission", role_id))
                     .header("content-type", "application/json")
+                    .header("Authorization", format!("Bearer {}", token))
                     .body(Body::from(
                         serde_json::to_vec(&json!({
                             "permission": perm
