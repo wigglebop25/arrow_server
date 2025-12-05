@@ -96,7 +96,9 @@ impl OrderService {
         &self,
         role_id: i32,
     ) -> Result<Option<Vec<Order>>, OrderServiceError> {
-        if !self.has_permission(role_id, RolePermissions::Admin).await? && !self.has_permission(role_id, RolePermissions::Read).await? {
+        if !self.has_permission(role_id, RolePermissions::Admin).await?
+            && !self.has_permission(role_id, RolePermissions::Read).await?
+        {
             return Err(OrderServiceError::PermissionDenied);
         }
 
@@ -129,13 +131,9 @@ impl OrderService {
     }
 
     /// Cancels an order (must have WRITE permission or be Admin)
-    pub async fn cancel_order(
-        &self,
-        order_id: i32,
-        role_id: i32,
-    ) -> Result<(), OrderServiceError> {
-        let has_permission = self.has_permission(role_id, RolePermissions::Admin).await? ||
-            self.has_permission(role_id, RolePermissions::Write).await?;
+    pub async fn cancel_order(&self, order_id: i32, role_id: i32) -> Result<(), OrderServiceError> {
+        let has_permission = self.has_permission(role_id, RolePermissions::Admin).await?
+            || self.has_permission(role_id, RolePermissions::Write).await?;
 
         if !has_permission {
             return Err(OrderServiceError::PermissionDenied);
@@ -194,8 +192,9 @@ impl OrderService {
         status: OrderStatus,
         role_id: i32,
     ) -> Result<Option<Vec<Order>>, OrderServiceError> {
-        if !self.has_permission(role_id, RolePermissions::Read).await? &&
-            !self.has_permission(role_id, RolePermissions::Admin).await? {
+        if !self.has_permission(role_id, RolePermissions::Read).await?
+            && !self.has_permission(role_id, RolePermissions::Admin).await?
+        {
             return Err(OrderServiceError::PermissionDenied);
         }
 
@@ -207,8 +206,11 @@ impl OrderService {
 
     /// Deletes an order
     pub async fn delete_order(&self, order_id: i32, role_id: i32) -> Result<(), OrderServiceError> {
-        if !self.has_permission(role_id, RolePermissions::Delete).await? &&
-            !self.has_permission(role_id, RolePermissions::Admin).await? {
+        if !self
+            .has_permission(role_id, RolePermissions::Delete)
+            .await?
+            && !self.has_permission(role_id, RolePermissions::Admin).await?
+        {
             return Err(OrderServiceError::PermissionDenied);
         }
 

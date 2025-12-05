@@ -1,12 +1,14 @@
-use crate::api::controllers::dto::role_dto::{AssignRoleDTO, NewRoleDTO, RoleDTO, SetPermissionDTO, UpdateRoleDTO};
+use crate::api::controllers::dto::role_dto::{
+    AssignRoleDTO, NewRoleDTO, RoleDTO, SetPermissionDTO, UpdateRoleDTO,
+};
 use crate::data::models::user_roles::{NewUserRole, RolePermissions, UpdateUserRole};
 use crate::data::repos::implementors::user_repo::UserRepo;
 use crate::data::repos::implementors::user_role_repo::UserRoleRepo;
 use crate::data::repos::traits::repository::Repository;
+use axum::Json;
 use axum::extract::Path;
 use axum::http::StatusCode;
 use axum::response::IntoResponse;
-use axum::Json;
 use std::str::FromStr;
 
 /// Get all roles
@@ -100,7 +102,7 @@ pub async fn set_permission(
                 StatusCode::BAD_REQUEST,
                 "Invalid permission. Valid values: READ, WRITE, DELETE, ADMIN",
             )
-                .into_response()
+                .into_response();
         }
     };
 
@@ -108,7 +110,11 @@ pub async fn set_permission(
         Ok(_) => (StatusCode::OK, "Permission set").into_response(),
         Err(e) => {
             eprintln!("Error setting permission: {}", e);
-            (StatusCode::INTERNAL_SERVER_ERROR, "Failed to set permission").into_response()
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "Failed to set permission",
+            )
+                .into_response()
         }
     }
 }
@@ -136,7 +142,11 @@ pub async fn remove_permission(Path(role_id): Path<i32>) -> impl IntoResponse {
     };
 
     match repo.update(role_id, update_form).await {
-        Ok(_) => (StatusCode::OK, "Permission removal not fully implemented - use set_permission to change").into_response(),
+        Ok(_) => (
+            StatusCode::OK,
+            "Permission removal not fully implemented - use set_permission to change",
+        )
+            .into_response(),
         Err(e) => {
             eprintln!("Error updating role: {}", e);
             (StatusCode::INTERNAL_SERVER_ERROR, "Failed to update role").into_response()
@@ -210,7 +220,10 @@ pub async fn assign_role_to_user(Json(assign_dto): Json<AssignRoleDTO>) -> impl 
         }
     };
 
-    match role_repo.assign_role_to_user(user.user_id, &assign_dto.role_name).await {
+    match role_repo
+        .assign_role_to_user(user.user_id, &assign_dto.role_name)
+        .await
+    {
         Ok(_) => (StatusCode::CREATED, "Role assigned to user").into_response(),
         Err(e) => {
             eprintln!("Error assigning role: {}", e);

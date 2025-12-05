@@ -6,10 +6,10 @@ use arrow_server_lib::data::models::user::NewUser;
 use arrow_server_lib::data::repos::implementors::user_repo::UserRepo;
 use arrow_server_lib::data::repos::traits::repository::Repository;
 use arrow_server_lib::security::auth::AuthService;
+use axum::Router;
 use axum::body::Body;
 use axum::http::{Request, StatusCode};
 use axum::routing::{delete, get, patch, post};
-use axum::Router;
 use diesel::result;
 use diesel_async::RunQueryDsl;
 use http_body_util::BodyExt;
@@ -194,7 +194,12 @@ async fn test_get_all_users_empty() {
     let app = app();
 
     let response = app
-        .oneshot(Request::builder().uri("/users").body(Body::empty()).unwrap())
+        .oneshot(
+            Request::builder()
+                .uri("/users")
+                .body(Body::empty())
+                .unwrap(),
+        )
         .await
         .unwrap();
 
@@ -216,7 +221,12 @@ async fn test_get_all_users_with_data() {
     let app = app();
 
     let response = app
-        .oneshot(Request::builder().uri("/users").body(Body::empty()).unwrap())
+        .oneshot(
+            Request::builder()
+                .uri("/users")
+                .body(Body::empty())
+                .unwrap(),
+        )
         .await
         .unwrap();
 

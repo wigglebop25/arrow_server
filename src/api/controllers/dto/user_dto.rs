@@ -1,5 +1,5 @@
-use serde::{Deserialize, Serialize};
 use crate::api::controllers::dto::role_dto::RoleDTO;
+use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct UserDTO {

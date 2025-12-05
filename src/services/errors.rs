@@ -1,5 +1,3 @@
-
-
 #[derive(Debug)]
 pub enum RoleError {
     RoleNotFound,

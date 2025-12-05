@@ -27,11 +27,7 @@ impl AuthService {
         .map_err(|_| AuthError::HashingError)?
     }
 
-    pub async fn verify_password(
-        &self,
-        password: &str,
-        hash: &str,
-    ) -> Result<bool, AuthError> {
+    pub async fn verify_password(&self, password: &str, hash: &str) -> Result<bool, AuthError> {
         let password = password.to_string();
         let hash = hash.to_string();
 

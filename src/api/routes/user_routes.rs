@@ -1,7 +1,7 @@
-use axum::Router;
-use axum::routing::{delete, get, post};
 use crate::api::controllers::user_controller;
 use crate::api::controllers::user_controller::{delete_user, edit_user, get_user_by_name};
+use axum::Router;
+use axum::routing::{delete, get, post};
 
 pub fn routes() -> Router<()> {
     Router::new()

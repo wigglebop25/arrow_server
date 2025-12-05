@@ -250,9 +250,7 @@ async fn test_get_other_user_orders_with_read_permission() {
         .expect("Failed to create order");
 
     // User2 with READ permission can view user1's orders (new behavior)
-    let result = service
-        .get_user_orders(user1_id, read_role_id)
-        .await;
+    let result = service.get_user_orders(user1_id, read_role_id).await;
 
     assert!(
         result.is_ok(),
@@ -310,7 +308,8 @@ async fn test_read_permission_get_all_orders() {
     setup().await.expect("Setup failed");
 
     let user_id = create_test_user("reader").await;
-    let write_role_id = create_role_with_permission(user_id, "writer", RolePermissions::Write).await;
+    let write_role_id =
+        create_role_with_permission(user_id, "writer", RolePermissions::Write).await;
     let read_role_id = create_role_with_permission(user_id, "reader", RolePermissions::Read).await;
     let product_id = create_test_product().await;
 
@@ -424,9 +423,7 @@ async fn test_cancel_other_user_order_denied() {
 
     // User2 tries to cancel user1's order (now only checks role permission)
     // With WRITE permission, this should now succeed
-    let result = service
-        .cancel_order(order_id, write_role2_id)
-        .await;
+    let result = service.cancel_order(order_id, write_role2_id).await;
 
     assert!(
         result.is_ok(),
@@ -440,7 +437,8 @@ async fn test_write_permission_update_order_status() {
     setup().await.expect("Setup failed");
 
     let user_id = create_test_user("status_updater").await;
-    let write_role_id = create_role_with_permission(user_id, "writer", RolePermissions::Write).await;
+    let write_role_id =
+        create_role_with_permission(user_id, "writer", RolePermissions::Write).await;
     let read_role_id = create_role_with_permission(user_id, "reader", RolePermissions::Read).await;
     let product_id = create_test_product().await;
 
@@ -545,7 +543,8 @@ async fn test_get_orders_by_status() {
     setup().await.expect("Setup failed");
 
     let user_id = create_test_user("status_viewer").await;
-    let write_role_id = create_role_with_permission(user_id, "writer", RolePermissions::Write).await;
+    let write_role_id =
+        create_role_with_permission(user_id, "writer", RolePermissions::Write).await;
     let read_role_id = create_role_with_permission(user_id, "reader", RolePermissions::Read).await;
     let product_id = create_test_product().await;
 

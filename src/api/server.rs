@@ -3,7 +3,7 @@ use axum::body::Body;
 use axum::extract::Request;
 use axum::middleware::Next;
 use axum::response::Response;
-use axum::routing::{get};
+use axum::routing::get;
 use axum::{Router, middleware};
 use std::net::SocketAddr;
 use tokio::net::TcpListener;

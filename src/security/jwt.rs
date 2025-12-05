@@ -1,9 +1,9 @@
-use serde::{Deserialize, Serialize};
 use crate::api::config::Config;
 use crate::api::controllers::dto::user_dto::UserDTO;
 use crate::data::repos::implementors::user_repo::UserRepo;
 use crate::data::repos::implementors::user_role_repo::UserRoleRepo;
 use crate::security::errors::AuthError;
+use serde::{Deserialize, Serialize};
 
 pub struct JwtService;
 // TODO: Wire to endpoints
@@ -20,11 +20,15 @@ impl JwtService {
         let user_repo = UserRepo::new();
         let role_repo = UserRoleRepo::new();
 
-        let user =  user_repo.get_by_username(&user.username).await
+        let user = user_repo
+            .get_by_username(&user.username)
+            .await
             .map_err(|_| AuthError::UserNotFound)?
             .ok_or(AuthError::UserNotFound)?;
 
-        let roles: Option<Vec<usize>> = role_repo.get_by_user_id(user.user_id).await
+        let roles: Option<Vec<usize>> = role_repo
+            .get_by_user_id(user.user_id)
+            .await
             .map_err(|_| AuthError::UserNotFound)?
             .map(|role_vec| role_vec.into_iter().map(|r| r.role_id as usize).collect());
 
@@ -40,21 +44,25 @@ impl JwtService {
             &claims,
             &jsonwebtoken::EncodingKey::from_secret(config.jwt_secret.as_ref()),
         )
-            .map_err(|_| AuthError::TokenCreationError);
+        .map_err(|_| AuthError::TokenCreationError);
 
         tracing::info!("Token generated: {:?}", token);
 
         Ok(token?)
     }
 
-    pub async fn validate_token<T: for<'de> Deserialize<'de>>(&self, token: &str) -> Result<T, AuthError> {
+    pub async fn validate_token<T: for<'de> Deserialize<'de>>(
+        &self,
+        token: &str,
+    ) -> Result<T, AuthError> {
         let validation = jsonwebtoken::Validation::default();
 
         let token_data = jsonwebtoken::decode::<T>(
             token,
             &jsonwebtoken::DecodingKey::from_secret(Config::default().jwt_secret.as_ref()),
             &validation,
-        ).map_err(|_| AuthError::InvalidToken);
+        )
+        .map_err(|_| AuthError::InvalidToken);
 
         Ok(token_data?.claims)
     }

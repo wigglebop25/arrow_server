@@ -1,7 +1,12 @@
-use crate::api::controllers::dto::{role_dto::{NewRoleDTO, RoleDTO, UpdateRoleDTO}, user_dto::{NewUserDTO, UpdateUserDTO}};
+use crate::api::controllers::dto::{
+    role_dto::{NewRoleDTO, RoleDTO, UpdateRoleDTO},
+    user_dto::{NewUserDTO, UpdateUserDTO},
+};
 use crate::data::models::schema::sql_types::UserRolesPermissionsSet;
 use crate::data::models::user::{NewUser, UpdateUser};
-use crate::data::models::user_roles::{NewUserRole, PermissionString, RolePermissions, UpdateUserRole, UserRole};
+use crate::data::models::user_roles::{
+    NewUserRole, PermissionString, RolePermissions, UpdateUserRole, UserRole,
+};
 use diesel::deserialize::FromSql;
 use diesel::mysql::{Mysql, MysqlValue};
 use diesel::serialize::{Output, ToSql};
@@ -114,6 +119,6 @@ impl FromStr for RolePermissions {
             "ADMIN" => Some(RolePermissions::Admin),
             _ => None,
         }
-            .ok_or("Unknown permission")
+        .ok_or("Unknown permission")
     }
 }

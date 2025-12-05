@@ -6,9 +6,9 @@ use crate::data::repos::implementors::user_repo::UserRepo;
 use crate::data::repos::implementors::user_role_repo::UserRoleRepo;
 use crate::data::repos::traits::repository::Repository;
 use crate::security::auth::AuthService;
-use axum::extract::{Path, Query};
 use axum::Json;
 use axum::body::Body;
+use axum::extract::{Path, Query};
 use axum::http::StatusCode;
 use axum::response::{IntoResponse, Response};
 
@@ -89,9 +89,11 @@ pub async fn login(Json(login_user): Json<LoginDTO>) -> impl IntoResponse {
 /// Converts a User model to UserDTO, fetching associated role if available
 async fn user_to_dto(user: &User) -> UserDTO {
     let role_repo = UserRoleRepo::new();
-    
+
     let role = match role_repo.get_by_user_id(user.user_id).await {
-        Ok(Some(roles)) if !roles.is_empty() => Some(RoleDTO::from(roles.into_iter().next().unwrap())),
+        Ok(Some(roles)) if !roles.is_empty() => {
+            Some(RoleDTO::from(roles.into_iter().next().unwrap()))
+        }
         _ => None,
     };
 
@@ -149,7 +151,13 @@ pub async fn get_user_by_name(Query(params): Query<UserQueryParams>) -> impl Int
 
     let username = match params.username {
         Some(name) => name,
-        None => return (StatusCode::BAD_REQUEST, "Username query parameter is required").into_response(),
+        None => {
+            return (
+                StatusCode::BAD_REQUEST,
+                "Username query parameter is required",
+            )
+                .into_response();
+        }
     };
 
     match repo.get_by_username(&username).await {
@@ -189,7 +197,11 @@ pub async fn edit_user(
             Ok(h) => Some(h),
             Err(e) => {
                 tracing::error!("Error hashing password: {}", e);
-                return (StatusCode::INTERNAL_SERVER_ERROR, "Failed to process password").into_response();
+                return (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    "Failed to process password",
+                )
+                    .into_response();
             }
         }
     } else {
