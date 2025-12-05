@@ -81,6 +81,7 @@ impl From<UserRole> for RoleDTO {
             .unwrap_or_default();
 
         RoleDTO {
+            role_id: user_role.role_id,
             name: user_role.name.clone(),
             permissions,
             description: user_role.description,

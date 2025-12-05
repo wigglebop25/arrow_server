@@ -32,7 +32,7 @@ where
             APIErrors::Unauthorized
         })?;
 
-    let claims = tokenizer.decode_token::<T>(&bearer.token()).await.map_err(|e| {;
+    let claims = tokenizer.decode_token::<T>(&bearer.token()).await.map_err(|e| {
         tracing::error!("Token decoding error: {:?}", e);
         APIErrors::Unauthorized
     })?;

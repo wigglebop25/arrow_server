@@ -2,6 +2,7 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct RoleDTO {
+    pub role_id: i32,
     pub name: String,
     pub description: Option<String>,
     pub permissions: Vec<String>,
