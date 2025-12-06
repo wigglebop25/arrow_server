@@ -35,7 +35,7 @@ impl JwtService {
         let claims = AccessClaims {
             sub: user.user_id as usize,
             iat: curr_time,
-            exp: curr_time + config.jwt_expiration_minutes as usize,
+            exp: curr_time + (config.jwt_expiration_minutes * 60) as usize,
             roles,
         };
 
