@@ -24,14 +24,17 @@ impl OrderStatus {
             OrderStatus::Cancelled => "Cancelled",
         }
     }
+}
 
-    pub fn from_str(s: &str) -> Option<Self> {
+impl std::str::FromStr for OrderStatus {
+    type Err = ();
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s.to_lowercase().as_str() {
-            "pending" => Some(OrderStatus::Pending),
-            "accepted" => Some(OrderStatus::Accepted),
-            "completed" => Some(OrderStatus::Completed),
-            "cancelled" => Some(OrderStatus::Cancelled),
-            _ => None,
+            "pending" => Ok(OrderStatus::Pending),
+            "accepted" => Ok(OrderStatus::Accepted),
+            "completed" => Ok(OrderStatus::Completed),
+            "cancelled" => Ok(OrderStatus::Cancelled),
+            _ => Err(()),
         }
     }
 }
@@ -237,10 +240,9 @@ impl OrderService {
             .get_by_id(role_id)
             .await
             .map_err(|_| OrderServiceError::DatabaseError)?
+            && let Some(perm) = role.permissions.and_then(|p| p.as_permission())
         {
-            if let Some(perm) = role.permissions.and_then(|p| p.as_permission()) {
-                return Ok(perm == required_permission);
-            }
+            return Ok(perm == required_permission);
         }
         Ok(false)
     }

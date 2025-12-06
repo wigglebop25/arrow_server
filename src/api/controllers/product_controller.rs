@@ -1,11 +1,13 @@
+use crate::api::controllers::dto::product_dto::{
+    CreateProductRequest, ProductResponse, UpdateProductRequest,
+};
+use crate::security::jwt::AccessClaims;
+use crate::services::errors::ProductServiceError;
+use crate::services::product_service::ProductService;
 use axum::Json;
 use axum::extract::Path;
 use axum::http::StatusCode;
 use axum::response::IntoResponse;
-use crate::api::controllers::dto::product_dto::{CreateProductRequest, ProductResponse, UpdateProductRequest};
-use crate::services::product_service::ProductService;
-use crate::services::errors::ProductServiceError;
-use crate::security::jwt::AccessClaims;
 
 // NOTE: All routes except get_all should only be accessible by admin users.
 // TODO: Get all products endpoint is accessible by all authenticated users.
@@ -88,11 +90,14 @@ pub async fn create_product(
             Ok(_) => return (StatusCode::CREATED, "Product created").into_response(),
             Err(ProductServiceError::PermissionDenied) => continue,
             Err(ProductServiceError::ProductAlreadyExists) => {
-                return (StatusCode::CONFLICT, "Product already exists").into_response()
+                return (StatusCode::CONFLICT, "Product already exists").into_response();
             }
             Err(_) => {
-                return (StatusCode::INTERNAL_SERVER_ERROR, "Failed to create product")
-                    .into_response()
+                return (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    "Failed to create product",
+                )
+                    .into_response();
             }
         }
     }
@@ -128,11 +133,14 @@ pub async fn update_product(
             Ok(_) => return (StatusCode::OK, "Product updated").into_response(),
             Err(ProductServiceError::PermissionDenied) => continue,
             Err(ProductServiceError::ProductNotFound) => {
-                return (StatusCode::NOT_FOUND, "Product not found").into_response()
+                return (StatusCode::NOT_FOUND, "Product not found").into_response();
             }
             Err(_) => {
-                return (StatusCode::INTERNAL_SERVER_ERROR, "Failed to update product")
-                    .into_response()
+                return (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    "Failed to update product",
+                )
+                    .into_response();
             }
         }
     }
@@ -157,11 +165,14 @@ pub async fn delete_product(
             Ok(_) => return (StatusCode::OK, "Product deleted").into_response(),
             Err(ProductServiceError::PermissionDenied) => continue,
             Err(ProductServiceError::ProductNotFound) => {
-                return (StatusCode::NOT_FOUND, "Product not found").into_response()
+                return (StatusCode::NOT_FOUND, "Product not found").into_response();
             }
             Err(_) => {
-                return (StatusCode::INTERNAL_SERVER_ERROR, "Failed to delete product")
-                    .into_response()
+                return (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    "Failed to delete product",
+                )
+                    .into_response();
             }
         }
     }

@@ -1,3 +1,4 @@
+use arrow_server_lib::api::controllers::dto::user_dto::UserDTO;
 use arrow_server_lib::api::controllers::role_controller::{
     assign_role_to_user, create_role, delete_role, get_all_roles, get_role_by_name,
     remove_permission, set_permission, update_role,
@@ -10,7 +11,6 @@ use arrow_server_lib::data::repos::implementors::user_role_repo::UserRoleRepo;
 use arrow_server_lib::data::repos::traits::repository::Repository;
 use arrow_server_lib::security::auth::AuthService;
 use arrow_server_lib::security::jwt::JwtService;
-use arrow_server_lib::api::controllers::dto::user_dto::UserDTO;
 use axum::Router;
 use axum::body::Body;
 use axum::http::{Request, StatusCode};
@@ -70,22 +70,32 @@ async fn create_test_user(username: &str) -> i32 {
 /// Create an admin user and return their token
 async fn create_admin_user(username: &str) -> (i32, String) {
     let user_id = create_test_user(username).await;
-    
+
     let role_repo = UserRoleRepo::new();
     let jwt_service = JwtService::new();
-    
+
     // Create admin role
     let new_role = NewUserRole {
         user_id,
         name: "ADMIN",
         description: Some("Test Admin"),
     };
-    role_repo.add(new_role).await.expect("Failed to create role");
-    
+    role_repo
+        .add(new_role)
+        .await
+        .expect("Failed to create role");
+
     // Set admin permission
-    let role = role_repo.get_by_name("ADMIN").await.expect("Query failed").expect("Role not found");
-    role_repo.set_permissions(role.role_id, RolePermissions::Admin).await.expect("Failed to set permission");
-    
+    let role = role_repo
+        .get_by_name("ADMIN")
+        .await
+        .expect("Query failed")
+        .expect("Role not found");
+    role_repo
+        .set_permissions(role.role_id, RolePermissions::Admin)
+        .await
+        .expect("Failed to set permission");
+
     // Generate token
     let user_dto = UserDTO {
         user_id: Some(user_id),
@@ -94,18 +104,21 @@ async fn create_admin_user(username: &str) -> (i32, String) {
         created_at: None,
         updated_at: None,
     };
-    let token = jwt_service.generate_token(user_dto).await.expect("Failed to generate token");
-    
+    let token = jwt_service
+        .generate_token(user_dto)
+        .await
+        .expect("Failed to generate token");
+
     (user_id, token)
 }
 
 /// Create a regular (non-admin) user and return their token
 async fn create_regular_user(username: &str) -> (i32, String) {
     let user_id = create_test_user(username).await;
-    
+
     let role_repo = UserRoleRepo::new();
     let jwt_service = JwtService::new();
-    
+
     // Create regular role with READ permission
     let role_name = format!("{}_role", username);
     let new_role = NewUserRole {
@@ -113,12 +126,22 @@ async fn create_regular_user(username: &str) -> (i32, String) {
         name: &role_name,
         description: Some("Regular User"),
     };
-    role_repo.add(new_role).await.expect("Failed to create role");
-    
+    role_repo
+        .add(new_role)
+        .await
+        .expect("Failed to create role");
+
     // Set READ permission (non-admin)
-    let role = role_repo.get_by_name(&role_name).await.expect("Query failed").expect("Role not found");
-    role_repo.set_permissions(role.role_id, RolePermissions::Read).await.expect("Failed to set permission");
-    
+    let role = role_repo
+        .get_by_name(&role_name)
+        .await
+        .expect("Query failed")
+        .expect("Role not found");
+    role_repo
+        .set_permissions(role.role_id, RolePermissions::Read)
+        .await
+        .expect("Failed to set permission");
+
     // Generate token
     let user_dto = UserDTO {
         user_id: Some(user_id),
@@ -127,8 +150,11 @@ async fn create_regular_user(username: &str) -> (i32, String) {
         created_at: None,
         updated_at: None,
     };
-    let token = jwt_service.generate_token(user_dto).await.expect("Failed to generate token");
-    
+    let token = jwt_service
+        .generate_token(user_dto)
+        .await
+        .expect("Failed to generate token");
+
     (user_id, token)
 }
 
@@ -404,7 +430,7 @@ async fn test_update_role() {
         .oneshot(
             Request::builder()
                 .method("PATCH")
-                .uri(&format!("/roles/{}", role_id))
+                .uri(format!("/roles/{}", role_id))
                 .header("content-type", "application/json")
                 .header("Authorization", format!("Bearer {}", token))
                 .body(Body::from(
@@ -476,7 +502,7 @@ async fn test_delete_role() {
         .oneshot(
             Request::builder()
                 .method("DELETE")
-                .uri(&format!("/roles/{}", role_id))
+                .uri(format!("/roles/{}", role_id))
                 .header("Authorization", format!("Bearer {}", token))
                 .body(Body::empty())
                 .unwrap(),
@@ -530,7 +556,7 @@ async fn test_set_permission() {
         .oneshot(
             Request::builder()
                 .method("POST")
-                .uri(&format!("/roles/{}/permission", role_id))
+                .uri(format!("/roles/{}/permission", role_id))
                 .header("content-type", "application/json")
                 .header("Authorization", format!("Bearer {}", token))
                 .body(Body::from(
@@ -571,7 +597,7 @@ async fn test_set_permission_invalid() {
         .oneshot(
             Request::builder()
                 .method("POST")
-                .uri(&format!("/roles/{}/permission", role_id))
+                .uri(format!("/roles/{}/permission", role_id))
                 .header("content-type", "application/json")
                 .header("Authorization", format!("Bearer {}", token))
                 .body(Body::from(
@@ -707,7 +733,7 @@ async fn test_set_all_permission_types() {
             .oneshot(
                 Request::builder()
                     .method("POST")
-                    .uri(&format!("/roles/{}/permission", role_id))
+                    .uri(format!("/roles/{}/permission", role_id))
                     .header("content-type", "application/json")
                     .header("Authorization", format!("Bearer {}", token))
                     .body(Body::from(

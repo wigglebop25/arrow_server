@@ -16,12 +16,11 @@ use std::str::FromStr;
 async fn check_is_admin(role_ids: &[usize]) -> bool {
     let repo = UserRoleRepo::new();
     for &id in role_ids {
-        if let Ok(Some(role)) = repo.get_by_id(id as i32).await {
-            if let Some(perm) = role.get_permissions() {
-                if perm == RolePermissions::Admin {
-                    return true;
-                }
-            }
+        if let Ok(Some(role)) = repo.get_by_id(id as i32).await
+            && let Some(perm) = role.get_permissions()
+            && perm == RolePermissions::Admin
+        {
+            return true;
         }
     }
     false
@@ -55,7 +54,7 @@ pub async fn get_all_roles(claims: AccessClaims) -> impl IntoResponse {
 /// Get role by name (Admin only)
 pub async fn get_role_by_name(
     claims: AccessClaims,
-    Path(role_name): Path<String>
+    Path(role_name): Path<String>,
 ) -> impl IntoResponse {
     let roles = claims.roles.unwrap_or_default();
     if !check_is_admin(&roles).await {
@@ -80,7 +79,7 @@ pub async fn get_role_by_name(
 /// Create a new role (Admin only)
 pub async fn create_role(
     claims: AccessClaims,
-    Json(new_role): Json<NewRoleDTO>
+    Json(new_role): Json<NewRoleDTO>,
 ) -> impl IntoResponse {
     let roles = claims.roles.unwrap_or_default();
     if !check_is_admin(&roles).await {
@@ -169,7 +168,7 @@ pub async fn set_permission(
 /// Remove permission from a role (sets to NULL) (Admin only)
 pub async fn remove_permission(
     claims: AccessClaims,
-    Path(role_id): Path<i32>
+    Path(role_id): Path<i32>,
 ) -> impl IntoResponse {
     let roles = claims.roles.unwrap_or_default();
     if !check_is_admin(&roles).await {
@@ -208,10 +207,7 @@ pub async fn remove_permission(
 }
 
 /// Delete a role by ID (Admin only)
-pub async fn delete_role(
-    claims: AccessClaims,
-    Path(role_id): Path<i32>
-) -> impl IntoResponse {
+pub async fn delete_role(claims: AccessClaims, Path(role_id): Path<i32>) -> impl IntoResponse {
     let roles = claims.roles.unwrap_or_default();
     if !check_is_admin(&roles).await {
         return (StatusCode::FORBIDDEN, "Admin permission required").into_response();
@@ -275,7 +271,7 @@ pub async fn update_role(
 /// Assign a role to a user by username and role name (Admin only)
 pub async fn assign_role_to_user(
     claims: AccessClaims,
-    Json(assign_dto): Json<AssignRoleDTO>
+    Json(assign_dto): Json<AssignRoleDTO>,
 ) -> impl IntoResponse {
     let roles = claims.roles.unwrap_or_default();
     if !check_is_admin(&roles).await {

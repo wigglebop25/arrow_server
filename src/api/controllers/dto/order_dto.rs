@@ -1,6 +1,6 @@
+use crate::data::models::order::Order;
 use bigdecimal::BigDecimal;
 use serde::{Deserialize, Serialize};
-use crate::data::models::order::Order;
 
 #[derive(Deserialize)]
 pub struct OrderItemRequest {

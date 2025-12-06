@@ -17,12 +17,11 @@ use axum::response::IntoResponse;
 async fn check_is_admin(role_ids: &[usize]) -> bool {
     let repo = UserRoleRepo::new();
     for &id in role_ids {
-        if let Ok(Some(role)) = repo.get_by_id(id as i32).await {
-            if let Some(perm) = role.get_permissions() {
-                if perm == RolePermissions::Admin {
-                    return true;
-                }
-            }
+        if let Ok(Some(role)) = repo.get_by_id(id as i32).await
+            && let Some(perm) = role.get_permissions()
+            && perm == RolePermissions::Admin
+        {
+            return true;
         }
     }
     false
@@ -75,7 +74,13 @@ pub async fn register_user(Json(new_user): Json<NewUserDTO>) -> impl IntoRespons
     // 3. Fetch created user
     let user = match user_repo.get_by_username(&new_user.username).await {
         Ok(Some(u)) => u,
-        _ => return (StatusCode::INTERNAL_SERVER_ERROR, "User created but not found").into_response(),
+        _ => {
+            return (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "User created but not found",
+            )
+                .into_response();
+        }
     };
 
     // 4. Assign Admin Role if first user
@@ -86,13 +91,15 @@ pub async fn register_user(Json(new_user): Json<NewUserDTO>) -> impl IntoRespons
             name: role_name,
             description: Some("System Administrator"),
         };
-        
+
         if let Err(e) = role_repo.add(new_role).await {
             tracing::error!("Failed to create admin role: {}", e);
         } else {
             // Set permissions
             if let Ok(Some(role)) = role_repo.get_by_name(role_name).await {
-                let _ = role_repo.set_permissions(role.role_id, RolePermissions::Admin).await;
+                let _ = role_repo
+                    .set_permissions(role.role_id, RolePermissions::Admin)
+                    .await;
             }
         }
     }
@@ -106,10 +113,14 @@ pub async fn register_user(Json(new_user): Json<NewUserDTO>) -> impl IntoRespons
                 message: "User created and logged in".to_string(),
             };
             (StatusCode::CREATED, Json(response)).into_response()
-        },
+        }
         Err(e) => {
             tracing::error!("Error generating token: {:?}", e);
-            (StatusCode::INTERNAL_SERVER_ERROR, "User created but token generation failed").into_response()
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "User created but token generation failed",
+            )
+                .into_response()
         }
     }
 }
@@ -140,13 +151,14 @@ pub async fn login(Json(login_user): Json<LoginDTO>) -> impl IntoResponse {
                             message: "Login successful".to_string(),
                         };
                         (StatusCode::OK, Json(response)).into_response()
-                    },
+                    }
                     Err(e) => {
                         tracing::error!("Error generating token: {:?}", e);
-                        (StatusCode::INTERNAL_SERVER_ERROR, "Token generation failed").into_response()
+                        (StatusCode::INTERNAL_SERVER_ERROR, "Token generation failed")
+                            .into_response()
                     }
                 }
-            },
+            }
             Ok(false) => (StatusCode::UNAUTHORIZED, "Invalid credentials").into_response(),
             Err(e) => {
                 tracing::error!("Error verifying password: {}", e);
@@ -208,10 +220,7 @@ pub async fn get_all_users(claims: AccessClaims) -> impl IntoResponse {
 }
 
 /// Get user by ID
-pub async fn get_user(
-    claims: AccessClaims,
-    Path(user_id): Path<i32>
-) -> impl IntoResponse {
+pub async fn get_user(claims: AccessClaims, Path(user_id): Path<i32>) -> impl IntoResponse {
     let repo = UserRepo::new();
     let roles = claims.roles.unwrap_or_default();
     let is_admin = check_is_admin(&roles).await;
@@ -232,7 +241,7 @@ pub async fn get_user(
 /// Get user by name using query params
 pub async fn get_user_by_name(
     claims: AccessClaims,
-    Query(params): Query<UserQueryParams>
+    Query(params): Query<UserQueryParams>,
 ) -> impl IntoResponse {
     let repo = UserRepo::new();
     let roles = claims.roles.unwrap_or_default();
@@ -320,10 +329,7 @@ pub async fn edit_user(
 
 // Admin only route
 /// Delete user by ID
-pub async fn delete_user(
-    claims: AccessClaims,
-    Path(user_id): Path<i32>
-) -> impl IntoResponse {
+pub async fn delete_user(claims: AccessClaims, Path(user_id): Path<i32>) -> impl IntoResponse {
     let roles = claims.roles.unwrap_or_default();
     if !check_is_admin(&roles).await {
         return (StatusCode::FORBIDDEN, "Admin permission required").into_response();

@@ -84,10 +84,11 @@ impl ProductService {
         let repo = ProductRepo::new();
 
         // Check if product with same name already exists
-        if let Some(_) = repo
+        if repo
             .get_by_name(name)
             .await
             .map_err(|_| ProductServiceError::DatabaseError)?
+            .is_some()
         {
             return Err(ProductServiceError::ProductAlreadyExists);
         }
@@ -211,10 +212,9 @@ impl ProductService {
             .get_by_id(role_id)
             .await
             .map_err(|_| ProductServiceError::DatabaseError)?
+            && let Some(perm) = role.permissions.and_then(|p| p.as_permission())
         {
-            if let Some(perm) = role.permissions.and_then(|p| p.as_permission()) {
-                return Ok(perm == required_permission);
-            }
+            return Ok(perm == required_permission);
         }
         Ok(false)
     }

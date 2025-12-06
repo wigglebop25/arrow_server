@@ -1,16 +1,15 @@
-use axum::extract::FromRequestParts;
 use crate::api::errors::APIErrors;
-use axum::http::request::Parts;
+use crate::security::jwt::{AccessClaims, JwtService};
 use axum::RequestPartsExt;
+use axum::extract::FromRequestParts;
+use axum::http::request::Parts;
+use axum_extra::TypedHeader;
 use axum_extra::headers::Authorization;
 use axum_extra::headers::authorization::Bearer;
-use axum_extra::TypedHeader;
-use crate::security::jwt::{AccessClaims, JwtService};
 
 // TODO: JWT Extractor
 
-impl FromRequestParts<()> for AccessClaims
-{
+impl FromRequestParts<()> for AccessClaims {
     type Rejection = APIErrors;
 
     async fn from_request_parts(parts: &mut Parts, _state: &()) -> Result<Self, Self::Rejection> {
@@ -32,10 +31,13 @@ where
             APIErrors::Unauthorized
         })?;
 
-    let claims = tokenizer.decode_token::<T>(&bearer.token()).await.map_err(|e| {
-        tracing::error!("Token decoding error: {:?}", e);
-        APIErrors::Unauthorized
-    })?;
+    let claims = tokenizer
+        .decode_token::<T>(bearer.token())
+        .await
+        .map_err(|e| {
+            tracing::error!("Token decoding error: {:?}", e);
+            APIErrors::Unauthorized
+        })?;
 
     Ok(claims)
 }

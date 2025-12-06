@@ -48,7 +48,7 @@ impl JwtService {
 
         tracing::info!("Token generated: {:?}", token);
 
-        Ok(token?)
+        token
     }
 
     pub async fn decode_token<T: for<'de> Deserialize<'de>>(

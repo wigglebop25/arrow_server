@@ -30,13 +30,8 @@ impl RoleService {
             .await
             .map_err(|_| RoleError::RoleNotFound)?
         {
-            return if let Some(perm_str) = {
-                match role.permissions {
-                    Some(p) => Some(p.as_permission()),
-                    None => None,
-                }
-            } {
-                Ok(perm_str == Option::from(required_permission))
+            return if let Some(perm_str) = { role.permissions.and_then(|p| p.as_permission()) } {
+                Ok(perm_str == required_permission)
             } else {
                 Err(RoleError::PermissionDenied)
             };

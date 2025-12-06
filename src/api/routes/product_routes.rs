@@ -1,6 +1,6 @@
-use axum::routing::{get, post, put, delete};
-use axum::Router;
 use crate::api::controllers::product_controller;
+use axum::Router;
+use axum::routing::{delete, get, post, put};
 
 pub fn routes() -> Router {
     Router::new()

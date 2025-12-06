@@ -49,13 +49,10 @@ async fn test_create_user() {
         password_hash: &hashed,
     };
 
-    assert_eq!(
-        match auth.verify_password(raw_password, &hashed).await {
-            Ok(valid) => valid,
-            Err(_) => panic!("Password verification failed"),
-        },
-        true
-    );
+    assert!(match auth.verify_password(raw_password, &hashed).await {
+        Ok(valid) => valid,
+        Err(_) => panic!("Password verification failed"),
+    });
 
     let repo = UserRepo::new();
 

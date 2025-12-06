@@ -32,8 +32,6 @@ impl<'a> From<&'a UpdateUserDTO> for UpdateUser<'a> {
     }
 }
 
-
-
 impl<'a> From<&'a UpdateRoleDTO> for UpdateUserRole<'a> {
     fn from(dto: &'a UpdateRoleDTO) -> Self {
         UpdateUserRole {

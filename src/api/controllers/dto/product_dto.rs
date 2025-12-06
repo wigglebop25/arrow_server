@@ -1,6 +1,6 @@
+use crate::data::models::product::Product;
 use bigdecimal::BigDecimal;
 use serde::{Deserialize, Serialize};
-use crate::data::models::product::Product;
 
 #[derive(Deserialize)]
 pub struct CreateProductRequest {
