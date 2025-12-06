@@ -19,6 +19,7 @@ impl ProductService {
         role_id: i32,
     ) -> Result<Option<Vec<Product>>, ProductServiceError> {
         if !self.has_permission(role_id, RolePermissions::Read).await?
+            && !self.has_permission(role_id, RolePermissions::Write).await?
             && !self.has_permission(role_id, RolePermissions::Admin).await?
         {
             return Err(ProductServiceError::PermissionDenied);
@@ -37,6 +38,7 @@ impl ProductService {
         role_id: i32,
     ) -> Result<Option<Product>, ProductServiceError> {
         if !self.has_permission(role_id, RolePermissions::Read).await?
+            && !self.has_permission(role_id, RolePermissions::Write).await?
             && !self.has_permission(role_id, RolePermissions::Admin).await?
         {
             return Err(ProductServiceError::PermissionDenied);
@@ -55,6 +57,7 @@ impl ProductService {
         role_id: i32,
     ) -> Result<Option<Product>, ProductServiceError> {
         if !self.has_permission(role_id, RolePermissions::Read).await?
+            && !self.has_permission(role_id, RolePermissions::Write).await?
             && !self.has_permission(role_id, RolePermissions::Admin).await?
         {
             return Err(ProductServiceError::PermissionDenied);

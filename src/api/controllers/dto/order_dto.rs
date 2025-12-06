@@ -14,7 +14,7 @@ pub struct CreateOrderRequest {
     pub products: Vec<OrderItemRequest>,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, Deserialize)]
 pub struct OrderResponse {
     pub order_id: i32,
     pub user_id: i32,

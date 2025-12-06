@@ -83,8 +83,9 @@ impl OrderService {
     ) -> Result<Option<Vec<Order>>, OrderServiceError> {
         let is_admin = self.has_permission(role_id, RolePermissions::Admin).await?;
         let has_read = self.has_permission(role_id, RolePermissions::Read).await?;
+        let has_write = self.has_permission(role_id, RolePermissions::Write).await?;
 
-        if !has_read && !is_admin {
+        if !has_read && !is_admin && !has_write {
             return Err(OrderServiceError::PermissionDenied);
         }
 
@@ -101,6 +102,7 @@ impl OrderService {
     ) -> Result<Option<Vec<Order>>, OrderServiceError> {
         if !self.has_permission(role_id, RolePermissions::Admin).await?
             && !self.has_permission(role_id, RolePermissions::Read).await?
+            && !self.has_permission(role_id, RolePermissions::Write).await?
         {
             return Err(OrderServiceError::PermissionDenied);
         }
@@ -119,8 +121,9 @@ impl OrderService {
     ) -> Result<Option<Order>, OrderServiceError> {
         let is_admin = self.has_permission(role_id, RolePermissions::Admin).await?;
         let has_read = self.has_permission(role_id, RolePermissions::Read).await?;
+        let has_write = self.has_permission(role_id, RolePermissions::Write).await?;
 
-        if !has_read && !is_admin {
+        if !has_read && !is_admin && !has_write {
             return Err(OrderServiceError::PermissionDenied);
         }
 
@@ -197,6 +200,7 @@ impl OrderService {
     ) -> Result<Option<Vec<Order>>, OrderServiceError> {
         if !self.has_permission(role_id, RolePermissions::Read).await?
             && !self.has_permission(role_id, RolePermissions::Admin).await?
+            && !self.has_permission(role_id, RolePermissions::Write).await?
         {
             return Err(OrderServiceError::PermissionDenied);
         }

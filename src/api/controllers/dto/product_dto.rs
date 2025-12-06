@@ -18,7 +18,7 @@ pub struct UpdateProductRequest {
     pub product_image_uri: Option<String>,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, Deserialize)]
 pub struct ProductResponse {
     pub product_id: i32,
     pub name: String,
