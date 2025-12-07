@@ -10,7 +10,7 @@ use axum::http::StatusCode;
 use axum::response::IntoResponse;
 use bigdecimal::BigDecimal;
 use bigdecimal::FromPrimitive;
-
+use crate::data::repos::traits::repository::Repository;
 // TODO: Add get orders by role route which returns all orders of users with a specific role returns a list of orders filtered by role
 
 /// Get all orders
@@ -77,7 +77,7 @@ pub async fn create_order(
         return (StatusCode::FORBIDDEN, "Permission denied").into_response();
     }
 
-    let user_id = match user_repo.get_by_username(&payload.username).await {
+    let user_id = match user_repo.get_by_id(claims.sub as i32).await {
         Ok(Some(user)) => user.user_id,
         Ok(None) => return (StatusCode::BAD_REQUEST, "User not found").into_response(),
         Err(_) => return (StatusCode::INTERNAL_SERVER_ERROR, "Database error").into_response(),

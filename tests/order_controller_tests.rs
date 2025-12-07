@@ -156,7 +156,6 @@ async fn test_create_order_success() {
                 .header("content-type", "application/json")
                 .body(Body::from(
                     serde_json::to_vec(&json!({
-                        "username": "writer",
                         "products": [
                             {
                                 "product_id": pid,
@@ -193,7 +192,6 @@ async fn test_create_order_forbidden() {
                 .header("content-type", "application/json")
                 .body(Body::from(
                     serde_json::to_vec(&json!({
-                        "username": "reader",
                         "products": [
                             {
                                 "product_id": pid,
@@ -232,7 +230,6 @@ async fn test_get_all_orders_success() {
                 .header("content-type", "application/json")
                 .body(Body::from(
                     serde_json::to_vec(&json!({
-                        "username": "writer",
                         "products": [
                             {
                                 "product_id": pid,
@@ -290,7 +287,6 @@ async fn test_get_user_orders_by_name() {
                 .header("content-type", "application/json")
                 .body(Body::from(
                     serde_json::to_vec(&json!({
-                        "username": "writer",
                         "products": [
                             {
                                 "product_id": pid,

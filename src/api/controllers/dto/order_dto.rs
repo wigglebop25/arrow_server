@@ -10,7 +10,6 @@ pub struct OrderItemRequest {
 
 #[derive(Deserialize)]
 pub struct CreateOrderRequest {
-    pub username: String,
     pub products: Vec<OrderItemRequest>,
 }
 
