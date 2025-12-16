@@ -3,4 +3,4 @@
 .env
 compose.yml
 !.env.example
-!.compose.example
+!.compose.yml.example
