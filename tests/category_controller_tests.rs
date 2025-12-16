@@ -3,7 +3,7 @@ use arrow_server_lib::api::controllers::category_controller::{
     get_products_by_category, remove_product_from_category,
 };
 use arrow_server_lib::api::controllers::dto::user_dto::UserDTO;
-use arrow_server_lib::api::response::ProductResponse;
+use arrow_server_lib::api::response::{CategoryResponse, ProductResponse};
 use arrow_server_lib::data::database::Database;
 use arrow_server_lib::data::models::categories::NewCategory;
 use arrow_server_lib::data::models::product::NewProduct;
@@ -25,6 +25,7 @@ use bigdecimal::BigDecimal;
 use diesel::result;
 use diesel_async::RunQueryDsl;
 use http_body_util::BodyExt;
+use serde_json::json;
 
 use tower::ServiceExt;
 
@@ -176,6 +177,187 @@ fn app() -> Router {
             "/categories/{category_name}/products",
             get(get_products_by_category),
         )
+}
+
+#[tokio::test]
+#[serial_test::serial]
+async fn test_get_categories_success() {
+    setup().await.expect("Setup failed");
+    let (_, token) = create_user_with_role("reader", "pass", "READER", RolePermissions::Read).await;
+    let _ = create_test_category("Electronics").await;
+    let _ = create_test_category("Books").await;
+
+    let app_router = app();
+
+    let response = app_router
+        .oneshot(
+            Request::builder()
+                .uri("/categories")
+                .header("Authorization", format!("Bearer {}", token))
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+
+    assert_eq!(response.status(), StatusCode::OK);
+    let body = response.into_body().collect().await.unwrap().to_bytes();
+    let categories: Vec<CategoryResponse> = serde_json::from_slice(&body).unwrap();
+    assert_eq!(categories.len(), 2);
+}
+
+#[tokio::test]
+#[serial_test::serial]
+async fn test_add_category_success() {
+    setup().await.expect("Setup failed");
+    let (_, token) =
+        create_user_with_role("writer", "pass", "WRITER", RolePermissions::Write).await;
+
+    let app_router = app();
+
+    let response = app_router
+        .oneshot(
+            Request::builder()
+                .method("POST")
+                .uri("/categories")
+                .header("Authorization", format!("Bearer {}", token))
+                .header("content-type", "application/json")
+                .body(Body::from(
+                    serde_json::to_vec(&json!({
+                        "name": "New Category",
+                        "description": "Description"
+                    }))
+                    .unwrap(),
+                ))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+
+    assert_eq!(response.status(), StatusCode::CREATED);
+}
+
+#[tokio::test]
+#[serial_test::serial]
+async fn test_edit_category_success() {
+    setup().await.expect("Setup failed");
+    let (_, token) =
+        create_user_with_role("writer", "pass", "WRITER", RolePermissions::Write).await;
+    let cat_id = create_test_category("Old Name").await;
+
+    let app_router = app();
+
+    let response = app_router
+        .oneshot(
+            Request::builder()
+                .method("PUT")
+                .uri(format!("/categories/{}", cat_id))
+                .header("Authorization", format!("Bearer {}", token))
+                .header("content-type", "application/json")
+                .body(Body::from(
+                    serde_json::to_vec(&json!({
+                        "name": "New Name"
+                    }))
+                    .unwrap(),
+                ))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+
+    assert_eq!(response.status(), StatusCode::CREATED);
+}
+
+#[tokio::test]
+#[serial_test::serial]
+async fn test_delete_category_success() {
+    setup().await.expect("Setup failed");
+    let (_, token) =
+        create_user_with_role("deleter", "pass", "WRITER", RolePermissions::Write).await;
+    let cat_id = create_test_category("To Delete").await;
+
+    let app_router = app();
+
+    let response = app_router
+        .oneshot(
+            Request::builder()
+                .method("DELETE")
+                .uri(format!("/categories/{}", cat_id))
+                .header("Authorization", format!("Bearer {}", token))
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+
+    assert_eq!(response.status(), StatusCode::OK);
+}
+
+#[tokio::test]
+#[serial_test::serial]
+async fn test_add_product_to_category_success() {
+    setup().await.expect("Setup failed");
+    let (_, token) =
+        create_user_with_role("writer", "pass", "WRITER", RolePermissions::Write).await;
+    let _ = create_test_category("Electronics").await;
+    let _ = create_test_product("Laptop", BigDecimal::from(1000)).await;
+
+    let app_router = app();
+
+    let response = app_router
+        .oneshot(
+            Request::builder()
+                .method("POST")
+                .uri("/categories/product")
+                .header("Authorization", format!("Bearer {}", token))
+                .header("content-type", "application/json")
+                .body(Body::from(
+                    serde_json::to_vec(&json!({
+                        "category": "Electronics",
+                        "product": "Laptop"
+                    }))
+                    .unwrap(),
+                ))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+
+    assert_eq!(response.status(), StatusCode::CREATED);
+}
+
+#[tokio::test]
+#[serial_test::serial]
+async fn test_remove_product_from_category_success() {
+    setup().await.expect("Setup failed");
+    let (_, token) =
+        create_user_with_role("writer", "pass", "WRITER", RolePermissions::Write).await;
+    let cat_id = create_test_category("Electronics").await;
+    let prod_id = create_test_product("Laptop", BigDecimal::from(1000)).await;
+    assign_product_to_category(prod_id, cat_id).await;
+
+    let app_router = app();
+
+    let response = app_router
+        .oneshot(
+            Request::builder()
+                .method("POST")
+                .uri("/categories/product/remove")
+                .header("Authorization", format!("Bearer {}", token))
+                .header("content-type", "application/json")
+                .body(Body::from(
+                    serde_json::to_vec(&json!({
+                        "category": "Electronics",
+                        "product": "Laptop"
+                    }))
+                    .unwrap(),
+                ))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+
+    assert_eq!(response.status(), StatusCode::OK);
 }
 
 #[tokio::test]

@@ -212,5 +212,3 @@ pub async fn get_products_by_category(
 
     (StatusCode::FORBIDDEN, "Permission denied").into_response()
 }
-
-// TODO: Generate tests and put them in tests/api/controllers/category_controller_tests.rs

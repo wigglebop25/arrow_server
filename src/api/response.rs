@@ -21,7 +21,6 @@ pub struct OrderResponse {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub updated_at: Option<String>,
 }
-// TODO: Edit this to include the category details
 #[derive(Serialize, Deserialize)]
 pub struct ProductResponse {
     pub product_id: i32,
