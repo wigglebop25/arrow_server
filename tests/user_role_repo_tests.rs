@@ -479,3 +479,46 @@ async fn test_set_all_permission_types() {
         );
     }
 }
+
+#[tokio::test]
+#[serial_test::serial]
+async fn test_add_permission() {
+    setup().await.expect("Setup failed");
+
+    let user = create_test_user().await;
+    let repo = UserRoleRepo::new();
+
+    let new_role = NewUserRole {
+        user_id: user.user_id,
+        name: "multi_perm_role",
+        description: None,
+    };
+    repo.add(new_role).await.expect("Failed to add role");
+
+    let role = repo
+        .get_by_name("multi_perm_role")
+        .await
+        .expect("Get failed")
+        .expect("Not found");
+
+    // Set initial
+    repo.set_permissions(role.role_id, RolePermissions::Read)
+        .await
+        .expect("Set failed");
+
+    // Add another
+    repo.add_permission(role.role_id, RolePermissions::Write)
+        .await
+        .expect("Add failed");
+
+    let updated_role = repo
+        .get_by_id(role.role_id)
+        .await
+        .expect("Get failed")
+        .expect("Not found");
+
+    let perms = updated_role.get_all_permissions();
+    assert!(perms.contains(&RolePermissions::Read));
+    assert!(perms.contains(&RolePermissions::Write));
+    assert_eq!(perms.len(), 2);
+}

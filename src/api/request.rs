@@ -59,3 +59,9 @@ pub struct UpdateAssignCategoryRequest {
     pub category: Option<String>,
     pub product: Option<String>,
 }
+
+#[derive(Deserialize)]
+pub struct AddPermissionRequest {
+    pub role_name: String,
+    pub permission: String,
+}

@@ -1,11 +1,13 @@
 use crate::api::controllers::dto::role_dto::{
     AssignRoleDTO, NewRoleDTO, RoleDTO, SetPermissionDTO, UpdateRoleDTO,
 };
+use crate::api::request::AddPermissionRequest;
 use crate::data::models::user_roles::{NewUserRole, RolePermissions, UpdateUserRole};
 use crate::data::repos::implementors::user_repo::UserRepo;
 use crate::data::repos::implementors::user_role_repo::UserRoleRepo;
 use crate::data::repos::traits::repository::Repository;
 use crate::security::jwt::AccessClaims;
+use crate::services::role_service::RoleService;
 use axum::Json;
 use axum::extract::Path;
 use axum::http::StatusCode;
@@ -17,8 +19,7 @@ async fn check_is_admin(role_ids: &[usize]) -> bool {
     let repo = UserRoleRepo::new();
     for &id in role_ids {
         if let Ok(Some(role)) = repo.get_by_id(id as i32).await
-            && let Some(perm) = role.get_permissions()
-            && perm == RolePermissions::Admin
+            && role.has_permission(RolePermissions::Admin)
         {
             return true;
         }
@@ -213,6 +214,44 @@ pub async fn set_permission_by_name(
     }
 }
 
+/// Add permission to a role (Admin only)
+pub async fn add_permission(
+    claims: AccessClaims,
+    Json(request): Json<AddPermissionRequest>,
+) -> impl IntoResponse {
+    let roles = claims.roles.unwrap_or_default();
+    if !check_is_admin(&roles).await {
+        return (StatusCode::FORBIDDEN, "Admin permission required").into_response();
+    }
+
+    let permission = match RolePermissions::from_str(&request.permission) {
+        Ok(p) => p,
+        Err(_) => {
+            return (
+                StatusCode::BAD_REQUEST,
+                "Invalid permission. Valid values: READ, WRITE, DELETE, ADMIN",
+            )
+                .into_response();
+        }
+    };
+
+    let service = RoleService::new();
+    match service
+        .add_permission_to_role(&request.role_name, permission)
+        .await
+    {
+        Ok(_) => (StatusCode::OK, "Permission added").into_response(),
+        Err(e) => {
+            tracing::error!("Error adding permission: {:?}", e);
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "Failed to add permission",
+            )
+                .into_response()
+        }
+    }
+}
+// TODO: Implement properly
 /// Remove permission from a role (sets to NULL) (Admin only)
 pub async fn remove_permission(
     claims: AccessClaims,

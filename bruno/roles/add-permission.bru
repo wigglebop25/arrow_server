@@ -1,0 +1,22 @@
+meta {
+  name: Add Permission
+  type: http
+  seq: 8
+}
+
+post {
+  url: http://127.0.0.1:3000/api/v1/roles/add_permission
+  body: json
+  auth: inherit
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "role_name": "Customer",
+    "permission": "WRITE"
+  }
+}

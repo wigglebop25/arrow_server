@@ -11,5 +11,6 @@ pub fn routes() -> Router<()> {
         .route("/{id}", delete(delete_role))
         .route("/update/{id}", post(update_role))
         .route("/assign", post(assign_role_to_user))
+        .route("/add_permission", post(add_permission))
         .route("/{id}/delete_permission", patch(remove_permission))
 }

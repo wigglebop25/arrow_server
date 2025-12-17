@@ -122,7 +122,28 @@ impl RoleService {
             .map_err(|_| RoleError::PermissionAssignmentFailed)?;
         Ok(())
     }
-    // Additional role management methods would go here
+    pub async fn add_permission_to_role(
+        &self,
+        role_name: &str,
+        permission: RolePermissions,
+    ) -> Result<(), RoleError> {
+        use crate::data::repos::implementors::user_role_repo::UserRoleRepo;
+
+        let repo = UserRoleRepo::new();
+        let role = match repo
+            .get_by_name(role_name)
+            .await
+            .map_err(|_| RoleError::RoleNotFound)?
+        {
+            Some(r) => r,
+            None => return Err(RoleError::RoleNotFound),
+        };
+
+        repo.add_permission(role.role_id, permission)
+            .await
+            .map_err(|_| RoleError::PermissionAssignmentFailed)?;
+        Ok(())
+    }
 }
 
 impl Default for RoleService {

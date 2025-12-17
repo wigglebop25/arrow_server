@@ -23,9 +23,26 @@ pub struct UserRole {
 }
 
 impl UserRole {
-    /// Get the permissions as a RolePermissions enum
+    /// Get the permissions as a RolePermissions enum (returns first valid one found)
     pub fn get_permissions(&self) -> Option<RolePermissions> {
-        self.permissions.as_ref().and_then(|s| s.0.parse().ok())
+        self.get_all_permissions().into_iter().next()
+    }
+
+    /// Get all permissions
+    pub fn get_all_permissions(&self) -> Vec<RolePermissions> {
+        self.permissions
+            .as_ref()
+            .map(|s| {
+                s.0.split(',')
+                    .filter_map(|p| p.trim().parse().ok())
+                    .collect()
+            })
+            .unwrap_or_default()
+    }
+
+    /// Check if role has specific permission
+    pub fn has_permission(&self, perm: RolePermissions) -> bool {
+        self.get_all_permissions().contains(&perm)
     }
 }
 

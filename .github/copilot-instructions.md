@@ -9,7 +9,6 @@ Arrow Server (Asynchronous Rust Restaurant Order Workflow) is a REST API for res
 - User/role management with Argon2 password hashing
 - Role-based access control (customer vs employee permissions)
 - MySQL persistence for orders, users, sales records with audit timestamps
-- Photo/media endpoints serving files from filesystem (optional: Azure Blob Storage)
 
 ## Architecture
 

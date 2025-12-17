@@ -112,6 +112,56 @@ impl UserRoleRepo {
         .await
     }
 
+    pub async fn add_permission(
+        &self,
+        id: i32,
+        perm: RolePermissions,
+    ) -> Result<(), result::Error> {
+        use diesel::sql_query;
+        use diesel::sql_types::{Integer, Text};
+
+        let role = self.get_by_id(id).await?;
+        let role = match role {
+            Some(r) => r,
+            None => return Err(result::Error::NotFound),
+        };
+
+        if role.has_permission(perm) {
+            return Ok(());
+        }
+
+        let mut perms = role.get_all_permissions();
+        perms.push(perm);
+
+        let perm_str = perms
+            .iter()
+            .map(|p| p.as_str())
+            .collect::<Vec<_>>()
+            .join(",");
+
+        let db = Database::new().await;
+
+        let mut conn: Object<AsyncMysqlConnection> = db.get_connection().await.map_err(|e| {
+            result::Error::DatabaseError(
+                result::DatabaseErrorKind::UnableToSendCommand,
+                Box::new(e.to_string()),
+            )
+        })?;
+
+        conn.transaction(|connection| {
+            async move {
+                sql_query("UPDATE user_roles SET permissions = ? WHERE role_id = ?")
+                    .bind::<Text, _>(perm_str)
+                    .bind::<Integer, _>(id)
+                    .execute(connection)
+                    .await?;
+                Ok(())
+            }
+            .scope_boxed()
+        })
+        .await
+    }
+
     pub async fn assign_role_to_user(
         &self,
         user_id_val: i32,

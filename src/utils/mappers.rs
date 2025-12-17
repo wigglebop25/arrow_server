@@ -71,9 +71,10 @@ impl FromSql<UserRolesPermissionsSet, Mysql> for PermissionString {
 impl From<UserRole> for RoleDTO {
     fn from(user_role: UserRole) -> Self {
         let permissions = user_role
-            .get_permissions()
-            .map(|p| vec![p.as_str().to_string()])
-            .unwrap_or_default();
+            .get_all_permissions()
+            .into_iter()
+            .map(|p| p.as_str().to_string())
+            .collect();
 
         RoleDTO {
             role_id: user_role.role_id,
