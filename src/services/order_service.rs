@@ -10,6 +10,7 @@ use bigdecimal::BigDecimal;
 pub enum OrderStatus {
     Pending,
     Accepted,
+    Ready,
     Completed,
     Cancelled,
 }
@@ -19,6 +20,7 @@ impl OrderStatus {
         match self {
             OrderStatus::Pending => "Pending",
             OrderStatus::Accepted => "Accepted",
+            OrderStatus::Ready => "Ready",
             OrderStatus::Completed => "Completed",
             OrderStatus::Cancelled => "Cancelled",
         }
@@ -31,6 +33,7 @@ impl std::str::FromStr for OrderStatus {
         match s.to_lowercase().as_str() {
             "pending" => Ok(OrderStatus::Pending),
             "accepted" => Ok(OrderStatus::Accepted),
+            "ready" => Ok(OrderStatus::Ready),
             "completed" => Ok(OrderStatus::Completed),
             "cancelled" => Ok(OrderStatus::Cancelled),
             _ => Err(()),
